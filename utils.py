@@ -32,7 +32,7 @@ def load_css():
             padding: 15px;
             border-radius: 10px;
             text-align: center;
-            font-size: 10px;
+            font-size: 18px;
             color: white !important;
             margin-top: 20px;
             font-weight: bold;
@@ -63,6 +63,7 @@ def load_css():
         }}
         .playlist-promo a {{
             color: #FFD700 !important;
+            font-size: 18px;
             font-weight: bold;
         }}
         h1, h2, h3, h4, h5, h6, p, div {{
