@@ -1,4 +1,3 @@
-
 """
 playlist scanner
 """
@@ -7,8 +6,7 @@ import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
 
-
-# Zugriff auf Secrets (Notion-Token, Database-ID etc.)
+# Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
 NOTION_VERSION = "2022-06-28"
@@ -29,7 +27,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Beim Laden: Query-Parameter checken (neuer API-Stil)
+# On load: Check query parameters (new API style)
 params = st.query_params
 if params.get("logged_in") == ["1"] and params.get("user_email"):
     st.session_state.logged_in = True
@@ -60,31 +58,31 @@ def check_user_login(email, password):
     stored_hash = user_page.get("properties", {}).get("Password", {}).get("rich_text", [{}])[0].get("text", {}).get("content", "")
     return stored_hash == hash_password(password)
 
-# --- Sidebar: Login bleibt immer sichtbar und Titel anpassen ---
+# --- Sidebar: Login always visible and adjust title ---
 st.sidebar.title("Login")
 with st.sidebar.form("login_form"):
-    email = st.text_input("E-Mail", placeholder="user@example.com", value=st.session_state.get("user_email", ""))
-    password = st.text_input("Passwort", type="password")
+    email = st.text_input("Email", placeholder="user@example.com", value=st.session_state.get("user_email", ""))
+    password = st.text_input("Password", type="password")
     remember = st.checkbox("Keep me logged in")
     login_submit = st.form_submit_button("Login")
 if login_submit:
     if not email or "@" not in email or not password:
-        st.sidebar.error("Bitte alle Felder korrekt ausfüllen.")
+        st.sidebar.error("Please fill in all fields correctly.")
     else:
         if check_user_login(email, password):
             st.session_state.logged_in = True
             st.session_state.user_email = email
-            st.sidebar.success("Erfolgreich eingeloggt!")
+            st.sidebar.success("Logged in successfully!")
             if remember:
                 st.query_params = {"logged_in": "1", "user_email": email}
         else:
-            st.sidebar.error("Login fehlgeschlagen. Prüfe deine Angaben.")
+            st.sidebar.error("Login failed. Check your details.")
 
 if st.sidebar.button("Logout"):
     st.session_state.logged_in = False
     st.session_state.user_email = ""
     st.query_params = {}
-    st.sidebar.info("Abgemeldet.")
+    st.sidebar.info("Logged out.")
     
 st.markdown(
     """
@@ -128,7 +126,7 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# --- Scanner-Funktionalität ---
+# --- Scanner functionality ---
 def format_number(n):
     return format(n, ",").replace(",", ".")
 
@@ -189,10 +187,10 @@ def find_tracks_by_artist(playlist_id, query, token):
 
 def normalize_deezer_track(track):
     normalized = {}
-    normalized["name"] = track.get("title", "Unbekannter Titel")
+    normalized["name"] = track.get("title", "Unknown Title")
     artist_obj = track.get("artist", {})
     normalized["artists"] = [{
-        "name": artist_obj.get("name", "Unbekannter Artist"),
+        "name": artist_obj.get("name", "Unknown Artist"),
         "id": str(artist_obj.get("id", ""))
     }]
     cover_url = track.get("album", {}).get("cover")
@@ -220,7 +218,7 @@ def generate_track_key(track):
     artists = sorted([artist.get("name", "").strip().lower() for artist in track.get("artists", [])])
     return f"{track_name} - {'/'.join(artists)}"
 
-# --- Hauptbereich: Scanner UI ---
+# --- Main area: Scanner UI ---
 if st.session_state.logged_in:
     st.markdown('<div id="search_form">', unsafe_allow_html=True)
     with st.form("scanner_form"):
@@ -274,13 +272,13 @@ if st.session_state.logged_in:
         promo_placeholder.markdown(promo_html, unsafe_allow_html=True)
 
     if submit and search_term:
-        # Zeige für den Nutzer "scanning for (Suchbegriff) in (Playlistname)" während des Durchlaufs
+        # Show to the user "scanning for (search term) in (playlist name)" during the run
         results = {}
         total_listings = 0
         unique_playlists = set()
         total_playlists = len(all_playlists)
         
-        # Global deklarieren, bevor wir zuweisen
+        # Declare global before assignment
         global SPOTIFY_TOKEN, SPOTIFY_HEADERS
         spotify_token = get_spotify_token()
         SPOTIFY_TOKEN = spotify_token
@@ -292,13 +290,13 @@ if st.session_state.logged_in:
                 if not playlist:
                     update_progress_bar(i, total_playlists)
                     continue
-                playlist_name = playlist.get("name", "Unbekannte Playlist")
+                playlist_name = playlist.get("name", "Unknown Playlist")
                 playlist_followers = playlist.get("followers", {}).get("total", "N/A")
                 if isinstance(playlist_followers, int):
                     playlist_followers = format_number(playlist_followers)
                 playlist_owner = playlist.get("owner", {}).get("display_name", "N/A")
                 playlist_description = playlist.get("description", "")
-                # Statusmeldung für diese Playlist
+                # Status message for this playlist
                 status_message.info(f"Scanning for '{search_term}' in '{playlist_name}'")
                 tracks = find_tracks_by_artist(pid, search_term, spotify_token)
                 cover = playlist.get("images", [{}])[0].get("url")
@@ -308,7 +306,7 @@ if st.session_state.logged_in:
                 if not playlist:
                     update_progress_bar(i, total_playlists)
                     continue
-                playlist_name = playlist.get("title", "Unbekannte Playlist")
+                playlist_name = playlist.get("title", "Unknown Playlist")
                 playlist_followers = playlist.get("fans", "N/A")
                 if isinstance(playlist_followers, int):
                     playlist_followers = format_number(playlist_followers)
