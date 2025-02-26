@@ -7,8 +7,8 @@ NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
 NOTION_VERSION = "2022-06-28"
 
-st.set_page_config(page_title="Registrierung", layout="wide")
-st.title("Registrierung")
+st.set_page_config(page_title="Registration", layout="wide")
+st.title("Registration")
 
 from utils import load_css
 load_css()
@@ -41,7 +41,7 @@ def email_exists(email):
 
 def add_user_to_notion(email, first_name, last_name, password_hash):
     if email_exists(email):
-        st.error("Diese E-Mail ist bereits registriert.")
+        st.error("This email is already registered.")
         return False
     url = "https://api.notion.com/v1/pages"
     headers = {
@@ -63,20 +63,20 @@ def add_user_to_notion(email, first_name, last_name, password_hash):
     return response.status_code == 200
 
 with st.form("registration_form"):
-    st.subheader("Neues Konto erstellen")
-    email = st.text_input("E-Mail", placeholder="user@example.com")
-    first_name = st.text_input("Vorname")
-    last_name = st.text_input("Nachname")
-    password = st.text_input("Passwort", type="password")
-    password_confirm = st.text_input("Passwort bestätigen", type="password")
-    reg_submit = st.form_submit_button("Registrieren")
+    st.subheader("Create New Account")
+    email = st.text_input("Email", placeholder="user@example.com")
+    first_name = st.text_input("First Name")
+    last_name = st.text_input("Last Name")
+    password = st.text_input("Password", type="password")
+    password_confirm = st.text_input("Confirm Password", type="password")
+    reg_submit = st.form_submit_button("Register")
     
 if reg_submit:
     if not email or "@" not in email or not first_name or not last_name or not password:
-        st.error("Bitte alle Felder korrekt ausfüllen.")
+        st.error("Please fill in all fields correctly.")
     elif password != password_confirm:
-        st.error("Passwörter stimmen nicht überein!")
+        st.error("Passwords do not match!")
     else:
         password_hash = hash_password(password)
         if add_user_to_notion(email, first_name, last_name, password_hash):
-            st.success("Registrierung erfolgreich! Du kannst dich jetzt über die Login-Leiste anmelden.")
+            st.success("Registration successful! You can now log in via the login bar.")
