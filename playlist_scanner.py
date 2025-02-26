@@ -94,8 +94,10 @@ st.markdown(
 st.title("playlist scanner")
 st.markdown("<h4 style='text-align: left;'>created by <a href='https://www.instagram.com/capelli.mp3/' target='_blank'>capelli.mp3</a></h4>", unsafe_allow_html=True)
 
-# --- Style & JavaScript ---
-st.markdown(f"""
+def load_css():
+    spotify_green = "#1DB954"
+    dark_green = "#0E4723"
+    css = f"""
     <style>
         .stApp {{
             background-color: {spotify_green};
@@ -160,8 +162,16 @@ st.markdown(f"""
             color: white !important;
         }}
     </style>
-""", unsafe_allow_html=True)
-
+    <style>
+      :root {{
+         --h1-font-size: 2em;
+      }}
+      h1 {{
+         font-size: var(--h1-font-size) !important;
+      }}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
 st.markdown("""
     <style>
       :root {
