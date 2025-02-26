@@ -16,9 +16,18 @@ NOTION_VERSION = "2022-06-28"
 st.set_page_config(page_title="playlist scanner", layout="wide")
 
 from utils import load_css
-
 load_css()
 
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] > div:first-child {
+       background-color: #0E4723;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Beim Laden: Query-Parameter checken (neuer API-Stil)
 params = st.query_params
