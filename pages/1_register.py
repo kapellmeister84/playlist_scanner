@@ -10,6 +10,11 @@ NOTION_VERSION = "2022-06-28"
 st.set_page_config(page_title="Registrierung", layout="wide")
 st.title("Registrierung")
 
+from utils import load_css
+
+load_css()
+
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
