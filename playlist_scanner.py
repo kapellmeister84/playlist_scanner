@@ -111,7 +111,6 @@ st.markdown(f"""
         }}
         
         .custom-summary {{
-            background-color: {dark_green};
             padding: 15px;
             border-radius: 10px;
             text-align: center;
@@ -147,6 +146,7 @@ st.markdown(f"""
         }}
         .playlist-promo a {{
             color: #FFD700 !important;
+            font-size: 16px;
             font-weight: bold;
         }}
         h1, h2, h3, h4, h5, h6, p, div {{
