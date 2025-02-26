@@ -109,11 +109,7 @@ st.markdown(f"""
             color: black;
             caret-color: black !important;
         }}
-        .stButton button, .stForm button {{
-            background-color: {dark_green} !important;
-            color: white !important;
-            border: 1px solid white !important;
-        }}
+        
         .custom-summary {{
             background-color: {dark_green};
             padding: 15px;
