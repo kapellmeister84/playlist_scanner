@@ -426,4 +426,4 @@ if st.session_state.logged_in:
         else:
             st.warning(f"I'm sorry, {search_term} couldn't be found. 😔")
 else:
-    st.warning("Bitte logge dich ein, um den Scanner zu nutzen.")
+    st.warning("Please log in to use the scanner.")
