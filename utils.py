@@ -69,7 +69,6 @@ def load_css():
         h1, h2, h3, h4, h5, h6, p, div {{
             color: white !important;
         }}
-        /* Spezifisch für die Sidebar: */
         [data-testid="stSidebar"] * {{
             color: white !important;
         }}
@@ -83,7 +82,7 @@ def load_css():
     """
     st.markdown(css, unsafe_allow_html=True)
 
-    # Hamburger-Button via components einbetten, mit eigener ID
+    # Hamburger-Button fix im Darkmode
     components.html("""
     <style>
       #hamburger {
@@ -93,19 +92,10 @@ def load_css():
           z-index: 10000;
           cursor: pointer;
           font-size: 24px;
-          background-color: rgba(0,0,0,0.5);
+          background-color: #000; /* Fester dunkler Hintergrund */
           padding: 5px;
           border-radius: 5px;
-      }
-      @media (prefers-color-scheme: dark) {
-          #hamburger {
-              color: #FFF !important;
-          }
-      }
-      @media (prefers-color-scheme: light) {
-          #hamburger {
-              color: #000 !important;
-          }
+          color: #FFF !important; /* Immer weiße Schrift */
       }
     </style>
     <div id="hamburger">&#9776;</div>
