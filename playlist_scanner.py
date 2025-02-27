@@ -120,36 +120,69 @@ if st.session_state.logged_in:
     st.markdown(
         """
         <style>
-            /* Sidebar zunächst aus dem Sichtfeld schieben */
-            [data-testid="stSidebar"] {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease-in-out;
+            /* Für mobile Geräte: Sidebar fixieren und als Overlay anzeigen */
+            @media (max-width: 768px) {
+                [data-testid="stSidebar"] {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 80%;
+                    max-width: 300px;
+                    height: 100vh;
+                    transform: translateX(-100%);
+                    transition: transform 0.3s ease-in-out;
+                    z-index: 999;
+                    box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+                    background-color: #0E4723; /* Sidebar-Hintergrundfarbe anpassen */
+                }
+                #sidebar-toggle {
+                    position: fixed;
+                    top: 10px;
+                    left: 10px;
+                    z-index: 1000;
+                    cursor: pointer;
+                    font-size: 24px;
+                    background-color: #000;
+                    color: #FFF;
+                    padding: 5px;
+                    border-radius: 5px;
+                }
             }
-            /* Stil für den Toggle-Button */
-            #sidebar-toggle {
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                z-index: 10000;
-                cursor: pointer;
-                font-size: 24px;
-                background-color: #000;
-                color: #FFF;
-                padding: 5px;
-                border-radius: 5px;
+            /* Für Desktop kann der bestehende Stil beibehalten werden */
+            @media (min-width: 769px) {
+                [data-testid="stSidebar"] {
+                    transform: translateX(-100%);
+                    transition: transform 0.3s ease-in-out;
+                }
+                #sidebar-toggle {
+                    position: fixed;
+                    top: 10px;
+                    left: 10px;
+                    z-index: 1000;
+                    cursor: pointer;
+                    font-size: 24px;
+                    background-color: #000;
+                    color: #FFF;
+                    padding: 5px;
+                    border-radius: 5px;
+                }
             }
         </style>
         <div id="sidebar-toggle">&#9776;</div>
         <script>
-            const toggleBtn = document.getElementById('sidebar-toggle');
-            const sidebar = document.querySelector('[data-testid="stSidebar"]');
-            toggleBtn.onclick = function() {
-                if (sidebar.style.transform === "translateX(0%)") {
-                    sidebar.style.transform = "translateX(-100%)";
-                } else {
-                    sidebar.style.transform = "translateX(0%)";
-                }
-            };
+            (function(){
+                const toggleBtn = document.getElementById('sidebar-toggle');
+                const sidebar = document.querySelector('[data-testid="stSidebar"]');
+                let isOpen = false;
+                toggleBtn.onclick = function() {
+                    if (isOpen) {
+                        sidebar.style.transform = "translateX(-100%)";
+                    } else {
+                        sidebar.style.transform = "translateX(0)";
+                    }
+                    isOpen = !isOpen;
+                };
+            })();
         </script>
         """,
         unsafe_allow_html=True
