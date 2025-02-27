@@ -45,7 +45,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # Login-Verarbeitung über Query-Parameter (falls über das HTML-Formular gesendet)
-params = st.experimental_get_query_params()
+params = st.query_params
 if "email" in params and "password" in params:
     email_param = params["email"][0]
     password_param = params["password"][0]
@@ -64,10 +64,10 @@ if not st.session_state.logged_in:
         login_html = """
         <div style="max-width: 300px; margin: auto; font-family: sans-serif;">
           <form id="loginForm">
-            <label for="email">Email:</label><br>
+            <label for="email" style="color: white;">email:</label><br>
             <input type="email" id="email" name="email" autocomplete="username" required 
                    style="width: 100%; padding: 8px; margin-bottom: 10px;"><br>
-            <label for="password">Password:</label><br>
+            <label for="password" style="color: white;">password:</label><br>
             <input type="password" id="password" name="password" autocomplete="current-password" required 
                    style="width: 100%; padding: 8px; margin-bottom: 10px;"><br>
             <button type="submit" style="width: 100%; padding: 10px; background-color: #0E4723; color: white; border: none;">Login</button>
