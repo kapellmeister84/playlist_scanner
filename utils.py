@@ -93,46 +93,4 @@ def load_css():
     </style>
 """, unsafe_allow_html=True)
 
-    st.markdown(
-    """
-    <style>
-      /* Verstecke den internen Sidebar-Toggle-Button */
-      [data-testid="stSidebarNav"] {
-          display: none;
-      }
-      /* Style für dein eigenes Hamburger-Icon */
-      #custom-hamburger {
-          position: fixed;
-          top: 10px;
-          left: 10px;
-          z-index: 10000;
-          cursor: pointer;
-          font-size: 24px;
-          background-color: rgba(0, 0, 0, 0.5);
-          padding: 5px;
-          border-radius: 5px;
-          color: #FFF;
-      }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-    components.html(
-    """
-    <div id="custom-hamburger">&#9776;</div>
-    <script>
-      // Toggle-Funktion: Simuliere einen Klick auf den versteckten Sidebar-Toggle
-      document.getElementById("custom-hamburger").onclick = function() {
-          // Hier kannst du anpassen, wie die Sidebar ein- oder ausgeblendet werden soll
-          var sidebar = document.querySelector('[data-testid="stSidebar"]');
-          if (sidebar.style.display === "none") {
-              sidebar.style.display = "block";
-          } else {
-              sidebar.style.display = "none";
-          }
-      };
-    </script>
-    """,
-    height=0,
-)
 
