@@ -115,19 +115,7 @@ st.markdown(
     </script>
     """, unsafe_allow_html=True
 )
-##sidebar ausblenden, nach login##
-if st.session_state.logged_in:
-    st.markdown(
-        """
-        <style>
-            [data-testid="stSidebar"] {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease-in-out;
-            }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+
 # --- Scanner functionality ---
 def format_number(n):
     return format(n, ",").replace(",", ".")
