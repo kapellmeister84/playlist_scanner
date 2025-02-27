@@ -51,7 +51,7 @@ def load_css():
         .progress-bar-fill {{
             height: 100%;
             width: 0%;
-            background-color: {dark_green};
+            background-color: {blue};
             border-radius: 50px;
             transition: width 0.2s ease-in-out;
         }}
