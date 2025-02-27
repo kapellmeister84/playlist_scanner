@@ -116,6 +116,45 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
+if st.session_state.logged_in:
+    st.markdown(
+        """
+        <style>
+            /* Sidebar zunächst aus dem Sichtfeld schieben */
+            [data-testid="stSidebar"] {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+            }
+            /* Stil für den Toggle-Button */
+            #sidebar-toggle {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                z-index: 10000;
+                cursor: pointer;
+                font-size: 24px;
+                background-color: #000;
+                color: #FFF;
+                padding: 5px;
+                border-radius: 5px;
+            }
+        </style>
+        <div id="sidebar-toggle">&#9776;</div>
+        <script>
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            const sidebar = document.querySelector('[data-testid="stSidebar"]');
+            toggleBtn.onclick = function() {
+                if (sidebar.style.transform === "translateX(0%)") {
+                    sidebar.style.transform = "translateX(-100%)";
+                } else {
+                    sidebar.style.transform = "translateX(0%)";
+                }
+            };
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
+
 # --- Scanner functionality ---
 def format_number(n):
     return format(n, ",").replace(",", ".")
