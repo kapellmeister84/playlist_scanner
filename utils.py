@@ -87,9 +87,12 @@ def load_css():
             position: fixed;
             top: 10px;
             left: 10px;
-            z-index: 1000;
+            z-index: 10000;
             cursor: pointer;
             font-size: 24px;
+            background-color: rgba(0,0,0,0.5); /* Nur zum Testen, damit du den Button siehst */
+            padding: 5px;
+            border-radius: 5px;
         }
         @media (prefers-color-scheme: dark) {
             .hamburger {
@@ -106,17 +109,26 @@ def load_css():
 
     st.markdown("""
     <script>
-    (function() {
+    window.addEventListener('load', function(){
+        console.log('Hamburger script loaded');
         var hamburger = document.createElement('div');
         hamburger.className = 'hamburger';
-        hamburger.innerHTML = '&#9776;'; // Hamburger icon
-        hamburger.onclick = function() {
+        hamburger.innerHTML = '&#9776;';
+        hamburger.onclick = function(){
             var sidebarToggle = document.querySelector('[data-testid="stSidebarNav"]');
-            if(sidebarToggle) {
+            console.log('Hamburger clicked, sidebarToggle:', sidebarToggle);
+            if(sidebarToggle){
                 sidebarToggle.click();
+            } else {
+                console.log('Sidebar toggle element not found.');
+                // Alternative: Versuche stattdessen diesen Selector:
+                var altToggle = document.querySelector('button[aria-label="Toggle sidebar"]');
+                if(altToggle){
+                    altToggle.click();
+                }
             }
         };
         document.body.appendChild(hamburger);
-    })();
+    });
     </script>
 """, unsafe_allow_html=True)
