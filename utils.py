@@ -22,8 +22,8 @@ def load_css():
         }}
         .stTextInput > div > div > input {{
             background-color: rgba(255, 255, 255, 0.9);
-            color: blue;
-            caret-color: blue !important;
+            color: black;
+            caret-color: black !important;
         }}
         .stButton button, .stForm button {{
             background-color: {blue} !important;
