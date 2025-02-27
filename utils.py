@@ -69,20 +69,24 @@ def load_css():
         h1, h2, h3, h4, h5, h6, p, div {{
             color: white !important;
         }}
-      :root {{
-         --h1-font-size: 2em;
-      }}
-      h1 {{
-         font-size: var(--h1-font-size) !important;
-      }}
+        /* Spezifisch für die Sidebar: */
+        [data-testid="stSidebar"] * {{
+            color: white !important;
+        }}
+        :root {{
+            --h1-font-size: 2em;
+        }}
+        h1 {{
+            font-size: var(--h1-font-size) !important;
+        }}
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
-    # Hamburger-Button via components einbetten
+    # Hamburger-Button via components einbetten, mit eigener ID
     components.html("""
     <style>
-      .hamburger {
+      #hamburger {
           position: fixed;
           top: 10px;
           left: 10px;
@@ -92,20 +96,26 @@ def load_css():
           background-color: rgba(0,0,0,0.5);
           padding: 5px;
           border-radius: 5px;
-          color: #000 !important;
       }
       @media (prefers-color-scheme: dark) {
-          .hamburger {
+          #hamburger {
               color: #FFF !important;
           }
       }
+      @media (prefers-color-scheme: light) {
+          #hamburger {
+              color: #000 !important;
+          }
+      }
     </style>
-    <div class="hamburger" id="hamburger">&#9776;</div>
+    <div id="hamburger">&#9776;</div>
     <script>
       document.getElementById("hamburger").onclick = function() {
           var sidebarToggle = document.querySelector('[data-testid="stSidebarNav"]');
           if (sidebarToggle) {
               sidebarToggle.click();
+          } else {
+              console.log('Sidebar toggle element not found.');
           }
       };
     </script>
