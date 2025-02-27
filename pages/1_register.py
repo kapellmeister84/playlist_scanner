@@ -13,16 +13,7 @@ st.title("Registration")
 from utils import load_css
 load_css()
 
-st.markdown(
-    """
-    <style>
-    [data-testid="stSidebar"] > div:first-child {
-       background-color: #0E4723;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
