@@ -119,48 +119,6 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# --- Sidebar collapse via CSS (Toggle per Button) nach Login ---
-if st.session_state.logged_in:
-    st.markdown(
-        """
-        <style>
-            [data-testid="stSidebar"] {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease-in-out;
-            }
-            #sidebar-toggle {
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                z-index: 10000;
-                cursor: pointer;
-                font-size: 24px;
-                background-color: #000;
-                color: #FFF;
-                padding: 5px;
-                border-radius: 5px;
-            }
-        </style>
-        <div id="sidebar-toggle">&#9776;</div>
-        <script>
-            (function(){
-                const toggleBtn = document.getElementById('sidebar-toggle');
-                const sidebar = document.querySelector('[data-testid="stSidebar"]');
-                let isOpen = false;
-                toggleBtn.onclick = function() {
-                    if (isOpen) {
-                        sidebar.style.transform = "translateX(-100%)";
-                    } else {
-                        sidebar.style.transform = "translateX(0)";
-                    }
-                    isOpen = !isOpen;
-                };
-            })();
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
-
 # --- Scanner functionality ---
 def format_number(n):
     return format(n, ",").replace(",", ".")
@@ -374,17 +332,7 @@ if st.session_state.logged_in:
             update_progress_bar(i, total_playlists)
             time.sleep(0.1)
         
-        # Nach der Suche: Setze den Hintergrund wieder auf Spotify-Grün
-        st.markdown(
-            """
-            <style id="wallpaper-style">
-               .stApp {
-                  background: #1DB954 !important;
-               }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+    
         status_message.empty()
         progress_placeholder.empty()
         promo_placeholder.empty()
