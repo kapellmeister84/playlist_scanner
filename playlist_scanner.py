@@ -6,6 +6,8 @@ import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
 
+if "registered" not in st.session_state:
+    st.session_state.registered = False
 
 # Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
