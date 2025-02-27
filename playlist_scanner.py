@@ -16,7 +16,6 @@ st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar
 from utils import load_css
 load_css()
 
-
 # On load: Check query parameters (new API style)
 params = st.query_params
 if params.get("logged_in") == ["1"] and params.get("user_email"):
@@ -77,7 +76,12 @@ if st.sidebar.button("Logout"):
 st.markdown(
     """
     <script>
+      // Autocomplete für das Passwortfeld beim Login setzen
       document.addEventListener('DOMContentLoaded', function(){
+        var pwdInputs = document.querySelectorAll('input[type="password"]');
+        for (var i = 0; i < pwdInputs.length; i++){
+            pwdInputs[i].setAttribute('autocomplete', 'current-password');
+        }
         const input = document.querySelector('input[type="text"]');
         const btn = document.querySelector('button[type="submit"]');
         if(input && btn) {
@@ -95,7 +99,6 @@ st.markdown(
 
 st.title("playlist scanner")
 st.markdown("<h4 style='text-align: left;'>created by <a href='https://www.instagram.com/capelli.mp3/' target='_blank'>capelli.mp3</a></h4>", unsafe_allow_html=True)
-
 
 st.markdown(
     """
@@ -116,6 +119,47 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
+# --- Optional: Sidebar collapse via CSS nach Login (Toggle per Button möglich) ---
+if st.session_state.logged_in:
+    st.markdown(
+        """
+        <style>
+            [data-testid="stSidebar"] {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+            }
+            #sidebar-toggle {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                z-index: 10000;
+                cursor: pointer;
+                font-size: 24px;
+                background-color: #000;
+                color: #FFF;
+                padding: 5px;
+                border-radius: 5px;
+            }
+        </style>
+        <div id="sidebar-toggle">&#9776;</div>
+        <script>
+            (function(){
+                const toggleBtn = document.getElementById('sidebar-toggle');
+                const sidebar = document.querySelector('[data-testid="stSidebar"]');
+                let isOpen = false;
+                toggleBtn.onclick = function() {
+                    if (isOpen) {
+                        sidebar.style.transform = "translateX(-100%)";
+                    } else {
+                        sidebar.style.transform = "translateX(0)";
+                    }
+                    isOpen = !isOpen;
+                };
+            })();
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
 
 # --- Scanner functionality ---
 def format_number(n):
@@ -287,7 +331,6 @@ if st.session_state.logged_in:
                     playlist_followers = format_number(playlist_followers)
                 playlist_owner = playlist.get("owner", {}).get("display_name", "N/A")
                 playlist_description = playlist.get("description", "")
-                # Status message for this playlist
                 status_message.info(f"Scanning for '{search_term}' in '{playlist_name}'")
                 tracks = find_tracks_by_artist(pid, search_term, spotify_token)
                 cover = playlist.get("images", [{}])[0].get("url")
@@ -416,4 +459,3 @@ if st.session_state.logged_in:
             st.warning(f"I'm sorry, {search_term} couldn't be found. 😔")
 else:
     st.warning("Please log in to use the scanner.")
-                    
