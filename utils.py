@@ -81,3 +81,13 @@ def load_css():
     """
     st.markdown(css, unsafe_allow_html=True)
 
+    st.markdown("""
+    <style>
+        [data-testid="stSidebar"] .stButton button, [data-testid="stSidebar"] .stForm button {
+            background-color: #333333 !important;
+            color: white !important;
+            border: 1px solid white !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
