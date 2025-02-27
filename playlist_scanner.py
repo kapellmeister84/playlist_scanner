@@ -6,14 +6,13 @@ import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
 
-st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
 
 # Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
 NOTION_VERSION = "2022-06-28"
 
-st.set_page_config(page_title="playlist scanner", layout="wide")
+st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
 
 from utils import load_css
 load_css()
