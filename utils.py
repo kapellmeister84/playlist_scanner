@@ -1,15 +1,12 @@
-# utils.py
-import streamlit as st
-import streamlit.components.v1 as components
-
-
 def load_css():
     spotify_green = "#1DB954"
     dark_green = "#0E4723"
     css = f"""
     <style>
-        .stApp 
-    
+        .stApp {{
+            /* Hier kannst du eventuell dein Spotify-Grün als Fallback setzen, falls kein Wallpaper geladen wird */
+            background-color: {spotify_green};
+        }}
         a {{
             color: black !important;
             text-decoration: none;
@@ -89,7 +86,7 @@ def load_css():
             border: 1px solid white !important;
         }
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     st.markdown(
     """
@@ -100,9 +97,9 @@ def load_css():
     </style>
     """,
     unsafe_allow_html=True
-)
+    )
 
-st.markdown(
+    st.markdown(
     """
     <style>
       .stApp {
@@ -112,4 +109,4 @@ st.markdown(
     </style>
     """,
     unsafe_allow_html=True
-)
+    )
