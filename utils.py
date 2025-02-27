@@ -6,6 +6,7 @@ import streamlit.components.v1 as components
 def load_css():
     spotify_green = "#1DB954"
     dark_green = "#0E4723"
+    blue = "#104C8C"
     css = f"""
     <style>
         .stApp {{
@@ -21,11 +22,11 @@ def load_css():
         }}
         .stTextInput > div > div > input {{
             background-color: rgba(255, 255, 255, 0.9);
-            color: black;
+            color: blue;
             caret-color: black !important;
         }}
         .stButton button, .stForm button {{
-            background-color: {dark_green} !important;
+            background-color: {blue} !important;
             color: white !important;
             border: 1px solid white !important;
         }}
