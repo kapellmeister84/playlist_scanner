@@ -14,7 +14,7 @@ def load_css():
             background-color: {spotify_green};
         }}
         a {{
-            color: blue !important;
+            color: orange !important;
             text-decoration: none;
         }}
         a:hover {{
