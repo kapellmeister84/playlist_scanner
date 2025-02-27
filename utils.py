@@ -31,7 +31,7 @@ def load_css():
             border: 1px solid white !important;
         }}
         .custom-summary {{
-            background-color: {dark_green};
+            background-color: {blue};
             padding: 15px;
             border-radius: 10px;
             text-align: center;
