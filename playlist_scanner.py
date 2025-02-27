@@ -120,33 +120,11 @@ if st.session_state.logged_in:
     st.markdown(
         """
         <style>
-            /* Sidebar standardmäßig aus dem Sichtfeld schieben */
             [data-testid="stSidebar"] {
                 transform: translateX(-100%);
                 transition: transform 0.3s ease-in-out;
             }
-            /* Hamburger-Button zum Umschalten */
-            .toggle-btn {
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                z-index: 10001;
-                cursor: pointer;
-                font-size: 24px;
-                color: white;
-                background-color: #000;
-                padding: 5px;
-                border-radius: 5px;
-            }
         </style>
-        <div class="toggle-btn" onclick="
-            var sidebar = document.querySelector('[data-testid=\'stSidebar\']');
-            if (sidebar.style.transform === 'translateX(0%)') {
-                sidebar.style.transform = 'translateX(-100%)';
-            } else {
-                sidebar.style.transform = 'translateX(0%)';
-            }
-        ">☰</div>
         """,
         unsafe_allow_html=True
     )
