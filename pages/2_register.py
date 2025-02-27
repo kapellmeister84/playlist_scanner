@@ -1,4 +1,3 @@
-# pages/3_register.py
 import streamlit as st
 import hashlib, requests, json
 from datetime import datetime
@@ -55,7 +54,6 @@ def add_user_to_notion(email, first_name, last_name, password_hash):
     return response.status_code == 200
 
 if not st.session_state.registered:
-
     with st.form("registration_form"):
         st.subheader("Create New Account")
         email = st.text_input("Email", placeholder="user@example.com")
@@ -64,6 +62,21 @@ if not st.session_state.registered:
         password = st.text_input("Password", type="password")
         password_confirm = st.text_input("Confirm Password", type="password")
         reg_submit = st.form_submit_button("Register")
+    
+    # JavaScript, um das Passwortfeld mit autocomplete="new-password" zu versehen
+    st.markdown(
+        """
+        <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            var pwdInputs = document.querySelectorAll('input[type="password"]');
+            for (var i = 0; i < pwdInputs.length; i++){
+                pwdInputs[i].setAttribute('autocomplete', 'new-password');
+            }
+        });
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
     
     if reg_submit:
         if not email or "@" not in email or not first_name or not last_name or not password:
@@ -74,5 +87,5 @@ if not st.session_state.registered:
             password_hash = hash_password(password)
             if add_user_to_notion(email, first_name, last_name, password_hash):
                 st.success("Registration successful! You can now log in via the login bar.")
-                st.session_state.registered = True  # Flag setzen, damit die Registrierung nicht mehr angezeigt wird
+                st.session_state.registered = True
                 st.markdown('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
