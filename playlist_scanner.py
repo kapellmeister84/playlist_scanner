@@ -116,6 +116,17 @@ st.markdown(
     </script>
     """, unsafe_allow_html=True
 )
+if st.session_state.logged_in:
+    st.markdown(
+        """
+        <style>
+            [data-testid="stSidebar"] {
+                display: none;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 # --- Scanner functionality ---
 def format_number(n):
