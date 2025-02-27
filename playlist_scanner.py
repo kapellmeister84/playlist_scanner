@@ -275,18 +275,7 @@ if st.session_state.logged_in:
     progress_placeholder = st.empty()
     promo_placeholder = st.empty()
     
-    # Während der Suche: Setze den Hintergrund via CSS als Wallpaper (GIF)
-    st.markdown(
-        """
-        <style id="wallpaper-style">
-           .stApp {
-              background: url('https://i.pinimg.com/originals/c5/9a/d2/c59ad2bd4ad2fbacd04017debc679ddb.gif') no-repeat center center fixed;
-              background-size: cover;
-           }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    
     
     spotify_playlist_ids = [
         "6Di85VhG9vfyswWHBTEoQN", "37i9dQZF1DX4jP4eebSWR9", "37i9dQZF1DX59oR8I71XgB",
