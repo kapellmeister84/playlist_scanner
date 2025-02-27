@@ -79,7 +79,7 @@ if not st.session_state.logged_in:
             var email = document.getElementById("email").value;
             var password = document.getElementById("password").value;
             // Sende die Daten per Query-Parameter, damit sie im Python-Code verarbeitet werden können
-            window.location.href = "/login?email=" + encodeURIComponent(email) + "&password=" + encodeURIComponent(password);
+            window.location.href = "/playlist_scanner?email=" + encodeURIComponent(email) + "&password=" + encodeURIComponent(password);
           }
         </script>
         """
