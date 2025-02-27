@@ -81,24 +81,3 @@ def load_css():
     """
     st.markdown(css, unsafe_allow_html=True)
 
-    st.markdown("""
-    <style>
-        .hamburger {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 10000;
-            cursor: pointer;
-            font-size: 24px;
-            background-color: rgba(0,0,0,0.5); /* Testhintergrund, damit er auffällt */
-            padding: 5px;
-            border-radius: 5px;
-            color: #000 !important; /* Standard: Light Mode */
-        }
-        @media (prefers-color-scheme: dark) {
-            .hamburger {
-                color: #FFF !important;
-            }
-        }
-    </style>
-""", unsafe_allow_html=True)
