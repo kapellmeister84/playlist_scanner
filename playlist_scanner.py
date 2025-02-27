@@ -9,7 +9,7 @@ from datetime import datetime
 # Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
-NOTION_VERSION = "2022-06-28"
+NOTION_VERSION = st.secrets["NOTION_VERSION"] if "NOTION_VERSION" in st.secrets else "2022-06-28"
 
 st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
 
@@ -72,7 +72,7 @@ if st.sidebar.button("Logout"):
     st.session_state.user_email = ""
     st.query_params = {}
     st.sidebar.info("Logged out.")
-    
+
 st.markdown(
     """
     <script>
@@ -275,10 +275,10 @@ if st.session_state.logged_in:
     progress_placeholder = st.empty()
     promo_placeholder = st.empty()
     
-    # Vor dem Start der Suche: Setze den Hintergrund als Wallpaper (GIF)
+    # Während der Suche: Setze den Hintergrund via CSS als Wallpaper (GIF)
     st.markdown(
         """
-        <style>
+        <style id="wallpaper-style">
            .stApp {
               background: url('https://i.pinimg.com/originals/c5/9a/d2/c59ad2bd4ad2fbacd04017debc679ddb.gif') no-repeat center center fixed;
               background-size: cover;
@@ -385,10 +385,10 @@ if st.session_state.logged_in:
             update_progress_bar(i, total_playlists)
             time.sleep(0.1)
         
-        # Nach der Suche: Hintergrund wieder auf Spotify-Grün setzen
+        # Nach der Suche: Setze den Hintergrund wieder auf Spotify-Grün
         st.markdown(
             """
-            <style>
+            <style id="wallpaper-style">
                .stApp {
                   background: #1DB954 !important;
                }
