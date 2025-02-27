@@ -1,5 +1,5 @@
-# utils.py
 import streamlit as st
+import streamlit.components.v1 as components
 
 def load_css():
     spotify_green = "#1DB954"
@@ -69,8 +69,6 @@ def load_css():
         h1, h2, h3, h4, h5, h6, p, div {{
             color: white !important;
         }}
-    </style>
-    <style>
       :root {{
          --h1-font-size: 2em;
       }}
@@ -81,24 +79,34 @@ def load_css():
     """
     st.markdown(css, unsafe_allow_html=True)
 
-    st.markdown("""
+    # Hamburger-Button via components einbetten
+    components.html("""
     <style>
-        .hamburger {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 10000;
-            cursor: pointer;
-            font-size: 24px;
-            background-color: rgba(0,0,0,0.5); /* Testhintergrund, damit er auffällt */
-            padding: 5px;
-            border-radius: 5px;
-            color: #000 !important; /* Standard: Light Mode */
-        }
-        @media (prefers-color-scheme: dark) {
-            .hamburger {
-                color: #FFF !important;
-            }
-        }
+      .hamburger {
+          position: fixed;
+          top: 10px;
+          left: 10px;
+          z-index: 10000;
+          cursor: pointer;
+          font-size: 24px;
+          background-color: rgba(0,0,0,0.5);
+          padding: 5px;
+          border-radius: 5px;
+          color: #000 !important;
+      }
+      @media (prefers-color-scheme: dark) {
+          .hamburger {
+              color: #FFF !important;
+          }
+      }
     </style>
-""", unsafe_allow_html=True)
+    <div class="hamburger" id="hamburger">&#9776;</div>
+    <script>
+      document.getElementById("hamburger").onclick = function() {
+          var sidebarToggle = document.querySelector('[data-testid="stSidebarNav"]');
+          if (sidebarToggle) {
+              sidebarToggle.click();
+          }
+      };
+    </script>
+    """, height=0)
