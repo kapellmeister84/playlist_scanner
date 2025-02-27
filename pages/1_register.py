@@ -73,4 +73,5 @@ if not st.session_state.registered:
             password_hash = hash_password(password)
             if add_user_to_notion(email, first_name, last_name, password_hash):
                 st.success("Registration successful! You can now log in via the login bar.")
+                st.session_state.registered = True  # Flag setzen, damit die Registrierung nicht mehr angezeigt wird
                 st.markdown('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
