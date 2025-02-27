@@ -8,10 +8,8 @@ def load_css():
     dark_green = "#0E4723"
     css = f"""
     <style>
-        .stApp {{
-            background: url('https://freeimage.host/i/3dchREl') no-repeat center center fixed;
-            background-size: cover;
-        }}
+        .stApp 
+    
         a {{
             color: black !important;
             text-decoration: none;
@@ -98,6 +96,18 @@ def load_css():
     <style>
       .stTextInput > div > div > input::placeholder {
           color: #555555 !important;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    """
+    <style>
+      .stApp {
+        background: url('https://freeimage.host/i/3dchREl') no-repeat center center fixed;
+        background-size: cover;
       }
     </style>
     """,
