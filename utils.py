@@ -1,3 +1,8 @@
+# utils.py
+import streamlit as st
+import streamlit.components.v1 as components
+
+
 def load_css():
     spotify_green = "#1DB954"
     dark_green = "#0E4723"
