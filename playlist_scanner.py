@@ -16,16 +16,6 @@ st.set_page_config(page_title="playlist scanner", layout="wide")
 from utils import load_css
 load_css()
 
-st.markdown(
-    """
-    <style>
-    [data-testid="stSidebar"] > div:first-child {
-       background-color: #0E4723;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 # On load: Check query parameters (new API style)
 params = st.query_params
