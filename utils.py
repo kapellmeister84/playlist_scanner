@@ -108,7 +108,7 @@ def load_css():
     """
     <style>
       .stApp {
-        background: url('https://freeimage.host/i/3dchREl') no-repeat center center fixed;
+        background: url('https://iili.io/3dchREl.jpg') no-repeat center center fixed;
         background-size: cover;
       }
     </style>
