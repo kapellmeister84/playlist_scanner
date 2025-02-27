@@ -93,4 +93,15 @@ def load_css():
     </style>
 """, unsafe_allow_html=True)
 
+    st.markdown(
+    """
+    <style>
+      .stTextInput > div > div > input::placeholder {
+          color: #555555 !important;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
