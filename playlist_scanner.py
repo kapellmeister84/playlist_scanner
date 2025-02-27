@@ -1,23 +1,21 @@
-"""
-playlist scanner
-"""
+# pages/playlist_scanner.py
 import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
 import streamlit.components.v1 as components
+from utils import load_css
 
 st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
-from utils import load_css
 load_css()
 
-# Prüfe, ob der Benutzer eingeloggt ist – sonst verweise auf die Login-Seite
+# Prüfe, ob der Benutzer eingeloggt ist – falls nicht, weise auf die Login-Seite hin
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
-    st.warning("You are not logged in. Please log in via the [Login](./1_login) page.")
-    st.stop()  # Stoppt die Ausführung der App, falls nicht eingeloggt
+    st.warning("You are not logged in. Please log in via the [Login](./login) page.")
+    st.stop()
 
-# --- Scanner-Funktionalität ---
 st.title("playlist scanner")
 st.markdown("<h4 style='text-align: left;'>created by <a href='https://www.instagram.com/capelli.mp3/' target='_blank'>capelli.mp3</a></h4>", unsafe_allow_html=True)
+
 
 def format_number(n):
     return format(n, ",").replace(",", ".")
