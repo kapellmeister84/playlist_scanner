@@ -6,9 +6,7 @@ import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
 
-if "visited" not in st.session_state:
-    st.session_state.visited = True
-    st.session_state.sidebar_hidden = False  # Sidebar wird immer angezeigt beim ersten Aufruf
+st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
 
 # Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
