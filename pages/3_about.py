@@ -17,9 +17,9 @@ st.markdown("""
     <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" style="width:40px; margin: 0 10px;">
   </a>
   <a href="https://www.tiktok.com/@capelli.mp3" target="_blank" title="TikTok">
-    <img src="https://upload.wikimedia.org/wikipedia/en/0/06/TikTok_logo.svg" alt="TikTok" style="width:40px; margin: 0 10px;">
+    <img src="https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/1024px-TikTok_logo.svg.png" alt="TikTok" style="width:40px; margin: 0 10px;">
   </a>
-  <a href="https://open.spotify.com/artist/capelli" target="_blank" title="Spotify">
+  <a href="https://open.spotify.com/intl-de/artist/039VhVUEhmLgBiLkJog0Td" target="_blank" title="Spotify">
     <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="Spotify" style="width:40px; margin: 0 10px;">
   </a>
 </div>
