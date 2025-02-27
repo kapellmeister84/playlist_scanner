@@ -76,7 +76,7 @@ if st.sidebar.button("Logout"):
 st.markdown(
     """
     <script>
-      // Autocomplete für das Passwortfeld beim Login setzen
+      // Set autocomplete attribute for password fields to 'current-password'
       document.addEventListener('DOMContentLoaded', function(){
         var pwdInputs = document.querySelectorAll('input[type="password"]');
         for (var i = 0; i < pwdInputs.length; i++){
@@ -119,7 +119,7 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# --- Optional: Sidebar collapse via CSS nach Login (Toggle per Button möglich) ---
+# --- Sidebar collapse via CSS (Toggle per Button) nach Login ---
 if st.session_state.logged_in:
     st.markdown(
         """
@@ -274,6 +274,10 @@ if st.session_state.logged_in:
     status_message = st.empty()
     progress_placeholder = st.empty()
     promo_placeholder = st.empty()
+    
+    # Zeige das GIF als Wallpaper während der Suche
+    wallpaper = st.empty()
+    wallpaper.image("https://i.pinimg.com/originals/c5/9a/d2/c59ad2bd4ad2fbacd04017debc679ddb.gif", use_column_width=True)
 
     spotify_playlist_ids = [
         "6Di85VhG9vfyswWHBTEoQN", "37i9dQZF1DX4jP4eebSWR9", "37i9dQZF1DX59oR8I71XgB",
@@ -307,7 +311,6 @@ if st.session_state.logged_in:
         promo_placeholder.markdown(promo_html, unsafe_allow_html=True)
 
     if submit and search_term:
-        # Show to the user "scanning for (search term) in (playlist name)" during the run
         results = {}
         total_listings = 0
         unique_playlists = set()
@@ -376,6 +379,7 @@ if st.session_state.logged_in:
         status_message.empty()
         progress_placeholder.empty()
         promo_placeholder.empty()
+        wallpaper.empty()  # Entfernt das GIF, sobald die Suche abgeschlossen ist
         
         if results:
             song_count = len(results)
