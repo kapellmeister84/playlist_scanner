@@ -53,22 +53,24 @@ def add_user_to_notion(email, first_name, last_name, password_hash):
     response = requests.post(url, headers=headers, data=json.dumps(data))
     return response.status_code == 200
 
-with st.form("registration_form"):
-    st.subheader("Create New Account")
-    email = st.text_input("Email", placeholder="user@example.com")
-    first_name = st.text_input("First Name")
-    last_name = st.text_input("Last Name")
-    password = st.text_input("Password", type="password")
-    password_confirm = st.text_input("Confirm Password", type="password")
-    reg_submit = st.form_submit_button("Register")
+if not st.session_state.registered:
+
+    with st.form("registration_form"):
+        st.subheader("Create New Account")
+        email = st.text_input("Email", placeholder="user@example.com")
+        first_name = st.text_input("First Name")
+        last_name = st.text_input("Last Name")
+        password = st.text_input("Password", type="password")
+        password_confirm = st.text_input("Confirm Password", type="password")
+        reg_submit = st.form_submit_button("Register")
     
-if reg_submit:
-    if not email or "@" not in email or not first_name or not last_name or not password:
-        st.error("Please fill in all fields correctly.")
-    elif password != password_confirm:
-        st.error("Passwords do not match!")
-    else:
-        password_hash = hash_password(password)
-        if add_user_to_notion(email, first_name, last_name, password_hash):
-            st.success("Registration successful! You can now log in via the login bar.")
-            st.markdown('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
+    if reg_submit:
+        if not email or "@" not in email or not first_name or not last_name or not password:
+            st.error("Please fill in all fields correctly.")
+        elif password != password_confirm:
+            st.error("Passwords do not match!")
+        else:
+            password_hash = hash_password(password)
+            if add_user_to_notion(email, first_name, last_name, password_hash):
+                st.success("Registration successful! You can now log in via the login bar.")
+                st.markdown('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
