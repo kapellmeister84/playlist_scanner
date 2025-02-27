@@ -9,8 +9,8 @@ def load_css():
     css = f"""
     <style>
         .stApp {{
-            background-color: {spotify_green};
-            color: white !important;
+            background: url('https://freeimage.host/i/3dchREl') no-repeat center center fixed;
+            background-size: cover;
         }}
         a {{
             color: black !important;
@@ -103,5 +103,3 @@ def load_css():
     """,
     unsafe_allow_html=True
 )
-
-
