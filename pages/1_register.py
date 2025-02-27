@@ -13,7 +13,8 @@ st.title("Registration")
 from utils import load_css
 load_css()
 
-
+if "registered" not in st.session_state:
+    st.session_state.registered = False
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
