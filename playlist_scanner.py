@@ -116,6 +116,23 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
+if not st.session_state.logged_in:
+    st.markdown(
+        """
+        <style>
+          /* Für mobile Geräte: Stelle sicher, dass die Sidebar sichtbar ist */
+          @media only screen and (max-width: 768px) {
+              [data-testid="stSidebar"] {
+                  transform: translateX(0) !important;
+                  width: 300px !important;
+                  visibility: visible !important;
+              }
+          }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
 # --- Scanner functionality ---
 def format_number(n):
     return format(n, ",").replace(",", ".")
