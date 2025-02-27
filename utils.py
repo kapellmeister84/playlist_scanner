@@ -104,7 +104,7 @@ def load_css():
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
+    st.markdown("""
     <script>
     (function() {
         var hamburger = document.createElement('div');
