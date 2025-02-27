@@ -80,3 +80,43 @@ def load_css():
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
+
+    st.markdown("""
+    <style>
+        .hamburger {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            cursor: pointer;
+            font-size: 24px;
+        }
+        @media (prefers-color-scheme: dark) {
+            .hamburger {
+                color: #FFF;
+            }
+        }
+        @media (prefers-color-scheme: light) {
+            .hamburger {
+                color: #000;
+            }
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+    <script>
+    (function() {
+        var hamburger = document.createElement('div');
+        hamburger.className = 'hamburger';
+        hamburger.innerHTML = '&#9776;'; // Hamburger icon
+        hamburger.onclick = function() {
+            var sidebarToggle = document.querySelector('[data-testid="stSidebarNav"]');
+            if(sidebarToggle) {
+                sidebarToggle.click();
+            }
+        };
+        document.body.appendChild(hamburger);
+    })();
+    </script>
+""", unsafe_allow_html=True)
