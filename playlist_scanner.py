@@ -5,10 +5,10 @@ import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
 
-# Accessing secrets for both Notion databases
+# Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
-DATABASE_ID = st.secrets["DATABASE_ID"]         # Für Nutzer (Login/Registration)
-SEARCH_DATABASE_ID = st.secrets["SEARCH_DATABASE_ID"]  # Für Suchanfragen
+DATABASE_ID = st.secrets["DATABASE_ID"]
+SEARCH_DATABASE_ID = st.secrets["SEARCH_DATABASE_ID"]
 NOTION_VERSION = st.secrets["NOTION_VERSION"] if "NOTION_VERSION" in st.secrets else "2022-06-28"
 
 st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
@@ -115,7 +115,7 @@ if st.sidebar.button("Logout"):
 st.markdown(
     """
     <script>
-      // Set autocomplete for password fields to 'current-password'
+      // Set autocomplete attribute for password fields to 'current-password'
       document.addEventListener('DOMContentLoaded', function(){
         var pwdInputs = document.querySelectorAll('input[type="password"]');
         for (var i = 0; i < pwdInputs.length; i++){
@@ -156,6 +156,8 @@ st.markdown(
     </script>
     """, unsafe_allow_html=True
 )
+
+
 
 
 # --- Scanner functionality ---
@@ -291,7 +293,6 @@ if st.session_state.logged_in:
         unique_playlists = set()
         total_playlists = len(all_playlists)
         
-        # Declare global before assignment
         global SPOTIFY_TOKEN, SPOTIFY_HEADERS
         spotify_token = get_spotify_token()
         SPOTIFY_TOKEN = spotify_token
