@@ -243,7 +243,8 @@ if st.session_state.logged_in:
         "37i9dQZF1DX0XUsuxWHRQd", "37i9dQZF1DX4JAvHpjipBk", "37i9dQZF1DX7i0DhceX5x9",
         "37i9dQZF1DX2Nc3B70tvx0", "5RyrcmTrO52jOnaBkcY9dy", "6JMZfOAvKuNGcGAl6nQ4dt",
         "37i9dQZF1DX1zpUaiwr15A", "37i9dQZEVXbNv6cjoMVCyg", "6oiQozBfDMhbtciv64BDBA",
-        "5aZLJKzIh7iiBA64mZBhnw"
+        "5aZLJKzIh7iiBA64mZBhnw", "7jLtJrdChX6rXZ39SLVMKD", "37i9dQZF1DX3crNbt46mRU",
+        "52b9qE2M2uWn9EKYPe6uWK"
     ]
     deezer_playlist_ids = [
         "1111143121", "1043463931", "146820791", "1257540851",
