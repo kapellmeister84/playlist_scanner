@@ -6,20 +6,15 @@ import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
 
-if "registered" not in st.session_state:
-    st.session_state.registered = False
-
 # Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
-NOTION_VERSION = "2022-06-28"
+NOTION_VERSION = st.secrets["NOTION_VERSION"] if "NOTION_VERSION" in st.secrets else "2022-06-28"
 
 st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
 
 from utils import load_css
 load_css()
-
-
 
 # On load: Check query parameters (new API style)
 params = st.query_params
@@ -77,11 +72,16 @@ if st.sidebar.button("Logout"):
     st.session_state.user_email = ""
     st.query_params = {}
     st.sidebar.info("Logged out.")
-    
+
 st.markdown(
     """
     <script>
+      // Set autocomplete attribute for password fields to 'current-password'
       document.addEventListener('DOMContentLoaded', function(){
+        var pwdInputs = document.querySelectorAll('input[type="password"]');
+        for (var i = 0; i < pwdInputs.length; i++){
+            pwdInputs[i].setAttribute('autocomplete', 'current-password');
+        }
         const input = document.querySelector('input[type="text"]');
         const btn = document.querySelector('button[type="submit"]');
         if(input && btn) {
@@ -100,7 +100,6 @@ st.markdown(
 st.title("playlist scanner")
 st.markdown("<h4 style='text-align: left;'>created by <a href='https://www.instagram.com/capelli.mp3/' target='_blank'>capelli.mp3</a></h4>", unsafe_allow_html=True)
 
-
 st.markdown(
     """
     <script>
@@ -119,22 +118,6 @@ st.markdown(
     </script>
     """, unsafe_allow_html=True
 )
-if not st.session_state.logged_in:
-    st.markdown(
-        """
-        <style>
-          /* Für mobile Geräte: Stelle sicher, dass die Sidebar sichtbar ist */
-          @media only screen and (max-width: 768px) {
-              [data-testid="stSidebar"] {
-                  transform: translateX(0) !important;
-                  width: 300px !important;
-                  visibility: visible !important;
-              }
-          }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
 
 # --- Scanner functionality ---
 def format_number(n):
@@ -249,7 +232,9 @@ if st.session_state.logged_in:
     status_message = st.empty()
     progress_placeholder = st.empty()
     promo_placeholder = st.empty()
-
+    
+    
+    
     spotify_playlist_ids = [
         "6Di85VhG9vfyswWHBTEoQN", "37i9dQZF1DX4jP4eebSWR9", "37i9dQZF1DX59oR8I71XgB",
         "37i9dQZF1DXbKGrOUA30KN", "37i9dQZF1DWUW2bvSkjcJ6", "531gtG63RwBSjuxb7XDGPL",
@@ -257,7 +242,8 @@ if st.session_state.logged_in:
         "37i9dQZF1DWTBz12MDeCuX", "37i9dQZEVXbsQiwUKyCsTG", "37i9dQZF1DXcBWIGoYBM5M",
         "37i9dQZF1DX0XUsuxWHRQd", "37i9dQZF1DX4JAvHpjipBk", "37i9dQZF1DX7i0DhceX5x9",
         "37i9dQZF1DX2Nc3B70tvx0", "5RyrcmTrO52jOnaBkcY9dy", "6JMZfOAvKuNGcGAl6nQ4dt",
-        "37i9dQZF1DX1zpUaiwr15A", "37i9dQZEVXbNv6cjoMVCyg", "6oiQozBfDMhbtciv64BDBA"
+        "37i9dQZF1DX1zpUaiwr15A", "37i9dQZEVXbNv6cjoMVCyg", "6oiQozBfDMhbtciv64BDBA",
+        "5aZLJKzIh7iiBA64mZBhnw"
     ]
     deezer_playlist_ids = [
         "1111143121", "1043463931", "146820791", "1257540851",
@@ -282,7 +268,6 @@ if st.session_state.logged_in:
         promo_placeholder.markdown(promo_html, unsafe_allow_html=True)
 
     if submit and search_term:
-        # Show to the user "scanning for (search term) in (playlist name)" during the run
         results = {}
         total_listings = 0
         unique_playlists = set()
@@ -306,7 +291,6 @@ if st.session_state.logged_in:
                     playlist_followers = format_number(playlist_followers)
                 playlist_owner = playlist.get("owner", {}).get("display_name", "N/A")
                 playlist_description = playlist.get("description", "")
-                # Status message for this playlist
                 status_message.info(f"Scanning for '{search_term}' in '{playlist_name}'")
                 tracks = find_tracks_by_artist(pid, search_term, spotify_token)
                 cover = playlist.get("images", [{}])[0].get("url")
@@ -349,6 +333,7 @@ if st.session_state.logged_in:
             update_progress_bar(i, total_playlists)
             time.sleep(0.1)
         
+    
         status_message.empty()
         progress_placeholder.empty()
         promo_placeholder.empty()
