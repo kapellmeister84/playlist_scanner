@@ -236,20 +236,42 @@ if st.session_state.logged_in:
     
     
     spotify_playlist_ids = [
-        "6Di85VhG9vfyswWHBTEoQN", "37i9dQZF1DX4jP4eebSWR9", "37i9dQZF1DX59oR8I71XgB",
-        "37i9dQZF1DXbKGrOUA30KN", "37i9dQZF1DWUW2bvSkjcJ6", "531gtG63RwBSjuxb7XDGPL",
-        "37i9dQZF1DWSTqUqJcxFk6", "37i9dQZF1DX36edUJpD76c", "37i9dQZF1DWSFDWzEZlALC",
-        "37i9dQZF1DWTBz12MDeCuX", "37i9dQZEVXbsQiwUKyCsTG", "37i9dQZF1DXcBWIGoYBM5M",
-        "37i9dQZF1DX0XUsuxWHRQd", "37i9dQZF1DX4JAvHpjipBk", "37i9dQZF1DX7i0DhceX5x9",
-        "37i9dQZF1DX2Nc3B70tvx0", "5RyrcmTrO52jOnaBkcY9dy", "6JMZfOAvKuNGcGAl6nQ4dt",
-        "37i9dQZF1DX1zpUaiwr15A", "37i9dQZEVXbNv6cjoMVCyg", "6oiQozBfDMhbtciv64BDBA",
-        "5aZLJKzIh7iiBA64mZBhnw", "7jLtJrdChX6rXZ39SLVMKD", "37i9dQZF1DX3crNbt46mRU",
-        "52b9qE2M2uWn9EKYPe6uWK"
-    ]
+    
+    "37i9dQZF1DWUW2bvSkjcJ6",  # New Music Friday Deutschland – 97 Songs
+    "7jLtJrdChX6rXZ39SLVMKD",  # New Music Friday Austria
+    "37i9dQZF1DX3crNbt46mRU",  # New Music Friday Switzerland – 104 Songs
+    "531gtG63RwBSjuxb7XDGPL",  # Thank BACKSPIN, it's Friday
+    "37i9dQZF1DWSTqUqJcxFk6",  # Deutschrap Brandneu
+    "37i9dQZF1DX59oR8I71XgB",  # word!
+    "37i9dQZF1DX36edUJpD76c",  # Modus Mio
+    "37i9dQZF1DX0XUsuxWHRQd",  # RapCaviar – Top 50 Songs
+    "6Di85VhG9vfyswWHBTEoQN",  # freitag0uhr
+    "37i9dQZF1DX4jP4eebSWR9",  # Hot Hits Deutschland – Top 50 Songs
+    "37i9dQZF1DXbKGrOUA30KN",  # POPLAND – 75 Songs
+    "37i9dQZF1DWSFDWzEZlALC",  # Wilde Herzen – Top 75 Songs
+    "37i9dQZF1DWTBz12MDeCuX",  # me right now – Top 100 Songs
+    "37i9dQZEVXbsQiwUKyCsTG",  # Release Radar
+    "37i9dQZF1DXcBWIGoYBM5M",  # Today’s Top Hits – 50 Songs
+    "37i9dQZF1DX4JAvHpjipBk",  # New Music Friday – 100 Songs
+    "37i9dQZF1DX2Nc3B70tvx0",  # Front Page Indie – 113 Songs
+    "5RyrcmTrO52jOnaBkcY9dy",  # NEW WAVE GERMANY
+    "6JMZfOAvKuNGcGAl6nQ4dt",  # NEW NEW WAVE
+    "37i9dQZF1DX1zpUaiwr15A",  # Deutschrap Untergrund
+    "37i9dQZEVXbNv6cjoMVCyg",  # Viral 50 – Germany
+    "6oiQozBfDMhbtciv64BDBA",  # UNDERRATED DEUTSCHRAP – Vol. 1
+    "5aZLJKzIh7iiBA64mZBhnw",  # Deutschraps Zukunft
+    "52b9qE2M2uWn9EKYPe6uWK"   # Die beste neue Musik
+]
     deezer_playlist_ids = [
-        "1111143121", "1043463931", "146820791", "1257540851",
-        "8668716682", "4524622884", "65490170", "785141981"
-    ]
+    "1111143121",  # Deezer Flow
+    "1043463931",  # Top Hits Deutschland
+    "146820791",   # Fresh Finds
+    "1257540851",  # Deezer Recommends
+    "8668716682",  # Urban Vibes
+    "4524622884",  # Today's Best
+    "65490170",    # Old School Classics
+    "785141981"    # Party Hits
+]
     all_playlists = [(pid, "spotify") for pid in spotify_playlist_ids] + [(pid, "deezer") for pid in deezer_playlist_ids]
 
     def update_progress_bar(current, total):
