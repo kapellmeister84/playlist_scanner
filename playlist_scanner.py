@@ -1,6 +1,7 @@
 """
 playlist scanner
 """
+# page_title: playlist scanner
 import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
@@ -8,52 +9,12 @@ from datetime import datetime
 # Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
-SEARCH_DATABASE_ID = st.secrets["SEARCH_DATABASE_ID"]
 NOTION_VERSION = st.secrets["NOTION_VERSION"] if "NOTION_VERSION" in st.secrets else "2022-06-28"
 
 st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
-all_playlists = [(pid, "spotify") for pid in spotify_playlist_ids] + [(pid, "deezer") for pid in deezer_playlist_ids]
+
 from utils import load_css
 load_css()
-
-# Neue Funktion: Speichert die Suchanfrage in der Search-Datenbank
-def store_search_query(search_term, results):
-    artist_set = set()
-    song_list = []
-    for res in results.values():
-        track = res["track"]
-        song_name = track.get("name", "Unknown Song")
-        song_list.append(song_name)
-        for artist in track.get("artists", []):
-            artist_set.add(artist.get("name", "Unknown Artist"))
-    aggregated_artists = ", ".join(sorted(artist_set))
-    aggregated_songs = ", ".join(song_list)
-    
-    url = "https://api.notion.com/v1/pages"
-    headers = {
-         "Authorization": f"Bearer {NOTION_TOKEN}",
-         "Notion-Version": NOTION_VERSION,
-         "Content-Type": "application/json"
-    }
-    data = {
-         "parent": {"database_id": SEARCH_DATABASE_ID},
-         "properties": {
-             "Search term": {
-                 "title": [{"text": {"content": search_term}}]
-             },
-             "Artist": {
-                 "rich_text": [{"text": {"content": aggregated_artists}}]
-             },
-             "Song": {
-                 "rich_text": [{"text": {"content": aggregated_songs}}]
-             },
-             "Date created": {
-                 "date": {"start": datetime.utcnow().isoformat()}
-             }
-         }
-    }
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    return response.status_code == 200
 
 # On load: Check query parameters (new API style)
 params = st.query_params
@@ -138,6 +99,7 @@ st.markdown(
 
 st.title("playlist scanner")
 st.markdown("<h4 style='text-align: left;'>created by <a href='https://www.instagram.com/capelli.mp3/' target='_blank'>capelli.mp3</a></h4>", unsafe_allow_html=True)
+
 st.markdown(
     """
     <script>
@@ -156,9 +118,6 @@ st.markdown(
     </script>
     """, unsafe_allow_html=True
 )
-
-
-
 
 # --- Scanner functionality ---
 def format_number(n):
@@ -274,25 +233,47 @@ if st.session_state.logged_in:
     progress_placeholder = st.empty()
     promo_placeholder = st.empty()
     
-    # Während der Suche: Setze den Hintergrund via CSS als Wallpaper (GIF)
-    st.markdown(
-        """
-        <style id="wallpaper-style">
-           .stApp {
-              background: url('https://freeimage.host/i/3dchREl') no-repeat center center fixed;
-              background-size: cover;
-           }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
     
+    
+    spotify_playlist_ids = [
+        "6Di85VhG9vfyswWHBTEoQN", "37i9dQZF1DX4jP4eebSWR9", "37i9dQZF1DX59oR8I71XgB",
+        "37i9dQZF1DXbKGrOUA30KN", "37i9dQZF1DWUW2bvSkjcJ6", "531gtG63RwBSjuxb7XDGPL",
+        "37i9dQZF1DWSTqUqJcxFk6", "37i9dQZF1DX36edUJpD76c", "37i9dQZF1DWSFDWzEZlALC",
+        "37i9dQZF1DWTBz12MDeCuX", "37i9dQZEVXbsQiwUKyCsTG", "37i9dQZF1DXcBWIGoYBM5M",
+        "37i9dQZF1DX0XUsuxWHRQd", "37i9dQZF1DX4JAvHpjipBk", "37i9dQZF1DX7i0DhceX5x9",
+        "37i9dQZF1DX2Nc3B70tvx0", "5RyrcmTrO52jOnaBkcY9dy", "6JMZfOAvKuNGcGAl6nQ4dt",
+        "37i9dQZF1DX1zpUaiwr15A", "37i9dQZEVXbNv6cjoMVCyg", "6oiQozBfDMhbtciv64BDBA",
+        "5aZLJKzIh7iiBA64mZBhnw"
+    ]
+    deezer_playlist_ids = [
+        "1111143121", "1043463931", "146820791", "1257540851",
+        "8668716682", "4524622884", "65490170", "785141981"
+    ]
+    all_playlists = [(pid, "spotify") for pid in spotify_playlist_ids] + [(pid, "deezer") for pid in deezer_playlist_ids]
+
+    def update_progress_bar(current, total):
+        percentage = int((current / total) * 100)
+        progress_html = f"""
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: {percentage}%"></div>
+            </div>
+        """
+        progress_placeholder.markdown(progress_html, unsafe_allow_html=True)
+
+    def show_playlist_promo():
+        promo_html = (
+            "<div class='playlist-promo'>🎧 While you wait, check out capelli on spotify: "
+            "<a href='https://open.spotify.com/intl-de/artist/039VhVUEhmLgBiLkJog0Td' target='_blank'>Listen here</a></div>"
+        )
+        promo_placeholder.markdown(promo_html, unsafe_allow_html=True)
+
     if submit and search_term:
         results = {}
         total_listings = 0
         unique_playlists = set()
         total_playlists = len(all_playlists)
         
+        # Declare global before assignment
         global SPOTIFY_TOKEN, SPOTIFY_HEADERS
         spotify_token = get_spotify_token()
         SPOTIFY_TOKEN = spotify_token
@@ -302,12 +283,7 @@ if st.session_state.logged_in:
             if platform == "spotify":
                 playlist = get_playlist_data(pid, spotify_token)
                 if not playlist:
-                    progress_html = f"""
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" style="width: {int((i/total_playlists)*100)}%"></div>
-                        </div>
-                    """
-                    progress_placeholder.markdown(progress_html, unsafe_allow_html=True)
+                    update_progress_bar(i, total_playlists)
                     continue
                 playlist_name = playlist.get("name", "Unknown Playlist")
                 playlist_followers = playlist.get("followers", {}).get("total", "N/A")
@@ -322,12 +298,7 @@ if st.session_state.logged_in:
             else:
                 playlist = get_deezer_playlist_data(pid)
                 if not playlist:
-                    progress_html = f"""
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" style="width: {int((i/total_playlists)*100)}%"></div>
-                        </div>
-                    """
-                    progress_placeholder.markdown(progress_html, unsafe_allow_html=True)
+                    update_progress_bar(i, total_playlists)
                     continue
                 playlist_name = playlist.get("title", "Unknown Playlist")
                 playlist_followers = playlist.get("fans", "N/A")
@@ -359,46 +330,27 @@ if st.session_state.logged_in:
                     "description": playlist_description
                 })
             
-            progress_html = f"""
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: {int((i/total_playlists)*100)}%"></div>
-                </div>
-            """
-            progress_placeholder.markdown(progress_html, unsafe_allow_html=True)
+            update_progress_bar(i, total_playlists)
             time.sleep(0.1)
         
-        # Nach der Suche: Setze den Hintergrund wieder auf Spotify-Grün
-        st.markdown(
-            """
-            <style id="wallpaper-style">
-               .stApp {
-                  background: #1DB954 !important;
-               }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+    
         status_message.empty()
         progress_placeholder.empty()
         promo_placeholder.empty()
         
         if results:
-            store_success = store_search_query(search_term, results)
-            if store_success:
-                st.info("Search query and results saved in Notion.")
-            
             song_count = len(results)
             playlist_count = len(unique_playlists)
-            found_artist = None
+            artist_name = None
             for res in results.values():
                 for artist in res.get("track", {}).get("artists", []):
                     if search_term.lower() in artist.get("name", "").lower():
-                        found_artist = artist.get("name")
+                        artist_name = artist.get("name")
                         break
-                if found_artist:
+                if artist_name:
                     break
-            if found_artist:
-                summary_text = f"{found_artist} is placed in {playlist_count} playlists, with {song_count} distinct song(s). They have been listed a total of {total_listings} times."
+            if artist_name:
+                summary_text = f"{artist_name} is placed in {playlist_count} playlists, with {song_count} distinct song(s). They have been listed a total of {total_listings} times."
             else:
                 sample_song = list(results.values())[0]["track"]
                 song_title = sample_song.get("name", "").strip()
