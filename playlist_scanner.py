@@ -12,7 +12,7 @@ SEARCH_DATABASE_ID = st.secrets["SEARCH_DATABASE_ID"]
 NOTION_VERSION = st.secrets["NOTION_VERSION"] if "NOTION_VERSION" in st.secrets else "2022-06-28"
 
 st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
-
+all_playlists = [(pid, "spotify") for pid in spotify_playlist_ids] + [(pid, "deezer") for pid in deezer_playlist_ids]
 from utils import load_css
 load_css()
 
