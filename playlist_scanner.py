@@ -334,14 +334,14 @@ deezer_playlist_ids = (
 )
     all_playlists = [(pid, "spotify") for pid in spotify_playlist_ids] + [(pid, "deezer") for pid in deezer_playlist_ids]
 
-    def update_progress_bar(current, total):
-        percentage = int((current / total) * 100)
-        progress_html = f"""
-            <div class="progress-bar-container">
-                <div class="progress-bar-fill" style="width: {percentage}%"></div>
-            </div>
-        """
-        progress_placeholder.markdown(progress_html, unsafe_allow_html=True)
+def update_progress_bar(current, total):
+    percentage = int((current / total) * 100)
+    progress_html = f"""
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width: {percentage}%"></div>
+        </div>
+    """
+    progress_placeholder.markdown(progress_html, unsafe_allow_html=True)
 
     def show_playlist_promo():
         promo_html = (
