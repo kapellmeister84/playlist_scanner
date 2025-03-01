@@ -235,113 +235,30 @@ if st.session_state.logged_in:
     
     
     
-    # Deutschrap
-spotify_playlist_ids_deutschrap = [
-    "37i9dQZF1DWSTqUqJcxFk6",  # Deutschrap Brandneu
-    "37i9dQZF1DX1zpUaiwr15A",  # Deutschrap Untergrund
-    "6oiQozBfDMhbtciv64BDBA",  # UNDERRATED DEUTSCHRAP – Vol. 1
-    "5aZLJKzIh7iiBA64mZBhnw",  # Deutschraps Zukunft
-    "37i9dQZF1DWVldpBFom9q6",  # Deutschrap Klassiker
-]
-
-# Pop / Charts / New Releases
-spotify_playlist_ids_pop = [
-    "37i9dQZF1DX4jP4eebSWR9",  # Hot Hits Deutschland – Top 50 Songs
-    "37i9dQZF1DWUW2bvSkjcJ6",  # New Music Friday Deutschland – 97 Songs
-    "37i9dQZF1DXcBWIGoYBM5M",  # Today’s Top Hits – 50 Songs
-    "37i9dQZF1DX4JAvHpjipBk",  # New Music Friday – 100 Songs
-    "7jLtJrdChX6rXZ39SLVMKD",  # New Music Friday Austria
-    "37i9dQZF1DX3crNbt46mRU",  # New Music Friday Switzerland – 104 Songs
-    "52b9qE2M2uWn9EKYPe6uWK",  # Die beste neue Musik
-    "37i9dQZEVXbNv6cjoMVCyg",  # Viral 50 – Germany
-    "37i9dQZEVXbsQiwUKyCsTG",  # Release Radar
-    "37i9dQZF1DXbKGrOUA30KN",  # POPLAND – 75 Songs
-]
-
-# Hip-Hop / Rap (non-deutschrap)
-spotify_playlist_ids_rap = [
-    "531gtG63RwBSjuxb7XDGPL",  # Thank BACKSPIN, it's Friday
-    "37i9dQZF1DX0XUsuxWHRQd",  # RapCaviar – Top 50 Songs
-    "37i9dQZF1DWTBz12MDeCuX",  # me right now – Top 100 Songs
-]
-
-# Indie / Alternative / New Wave
-spotify_playlist_ids_indie = [
-    "37i9dQZF1DX59oR8I71XgB",  # word!
-    "37i9dQZF1DX36edUJpD76c",  # Modus Mio
-    "37i9dQZF1DX2Nc3B70tvx0",  # Front Page Indie – 113 Songs
-    "5RyrcmTrO52jOnaBkcY9dy",   # NEW WAVE GERMANY
-    "6JMZfOAvKuNGcGAl6nQ4dt",   # NEW NEW WAVE
-    "6Di85VhG9vfyswWHBTEoQN",   # freitag0uhr (Vibe/Alternative)
-    "37i9dQZF1DX7i0DhceX5x9",   # Titel bitte prüfen (Genre unklar, hier als Indie einsortiert)
-]
-
-# Party / Sommer / Rock
-spotify_playlist_ids_party = [
-    "37i9dQZF1DX8EJcZl0Y1NR",  # Deutsche Party Hits
-    "37i9dQZF1DX0qedEKhV1ac",  # Deutsche Sommerhits
-    "37i9dQZF1DX3PFzdbtx1Us",  # Deutsche Rock Klassiker
-]
-
-# Gesamtliste, sortiert nach Genre
-spotify_playlist_ids = (
-    spotify_playlist_ids_deutschrap +
-    spotify_playlist_ids_pop +
-    spotify_playlist_ids_rap +
-    spotify_playlist_ids_indie +
-    spotify_playlist_ids_party
-)
-    # Persönliche Empfehlungen / Stream
-deezer_flow = [
-    "1111143121",  # Deezer Flow
-]
-
-# Top-Hits / Charts
-deezer_hits = [
-    "1043463931",  # Top Hits Deutschland
-    "4524622884",  # Today's Best
-]
-
-# Neue Musik / Empfehlungen
-deezer_new = [
-    "146820791",   # Fresh Finds
-    "1257540851",  # Deezer Recommends
-]
-
-# Urban / Hip-Hop Vibes
-deezer_urban = [
-    "8668716682",  # Urban Vibes
-]
-
-# Klassiker
-deezer_classics = [
-    "65490170",    # Old School Classics
-]
-
-# Party
-deezer_party = [
-    "785141981",   # Party Hits
-]
-
-# Gesamtliste, sortiert nach Kategorie
-deezer_playlist_ids = (
-    deezer_flow +
-    deezer_hits +
-    deezer_new +
-    deezer_urban +
-    deezer_classics +
-    deezer_party
-)
+    spotify_playlist_ids = [
+        "6Di85VhG9vfyswWHBTEoQN", "37i9dQZF1DX4jP4eebSWR9", "37i9dQZF1DX59oR8I71XgB",
+        "37i9dQZF1DXbKGrOUA30KN", "37i9dQZF1DWUW2bvSkjcJ6", "531gtG63RwBSjuxb7XDGPL",
+        "37i9dQZF1DWSTqUqJcxFk6", "37i9dQZF1DX36edUJpD76c", "37i9dQZF1DWSFDWzEZlALC",
+        "37i9dQZF1DWTBz12MDeCuX", "37i9dQZEVXbsQiwUKyCsTG", "37i9dQZF1DXcBWIGoYBM5M",
+        "37i9dQZF1DX0XUsuxWHRQd", "37i9dQZF1DX4JAvHpjipBk", "37i9dQZF1DX7i0DhceX5x9",
+        "37i9dQZF1DX2Nc3B70tvx0", "5RyrcmTrO52jOnaBkcY9dy", "6JMZfOAvKuNGcGAl6nQ4dt",
+        "37i9dQZF1DX1zpUaiwr15A", "37i9dQZEVXbNv6cjoMVCyg", "6oiQozBfDMhbtciv64BDBA",
+        "5aZLJKzIh7iiBA64mZBhnw"
+    ]
+    deezer_playlist_ids = [
+        "1111143121", "1043463931", "146820791", "1257540851",
+        "8668716682", "4524622884", "65490170", "785141981"
+    ]
     all_playlists = [(pid, "spotify") for pid in spotify_playlist_ids] + [(pid, "deezer") for pid in deezer_playlist_ids]
 
-def update_progress_bar(current, total):
-    percentage = int((current / total) * 100)
-    progress_html = f"""
-        <div class="progress-bar-container">
-            <div class="progress-bar-fill" style="width: {percentage}%"></div>
-        </div>
-    """
-    progress_placeholder.markdown(progress_html, unsafe_allow_html=True)
+    def update_progress_bar(current, total):
+        percentage = int((current / total) * 100)
+        progress_html = f"""
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: {percentage}%"></div>
+            </div>
+        """
+        progress_placeholder.markdown(progress_html, unsafe_allow_html=True)
 
     def show_playlist_promo():
         promo_html = (
