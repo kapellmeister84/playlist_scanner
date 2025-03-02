@@ -1,7 +1,7 @@
 import streamlit as st
 import hashlib, requests, json
 from datetime import datetime
-from utils import check_user_login, hash_password, get_user_data
+from playlist_sacnner import check_user_login, hash_password, get_user_data
 
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
