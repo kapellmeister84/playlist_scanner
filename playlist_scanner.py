@@ -12,17 +12,7 @@ NOTION_VERSION = st.secrets["NOTION_VERSION"] if "NOTION_VERSION" in st.secrets 
 
 st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
 
-from utils import load_css
-load_css()
-
-# On load: Check query parameters (new API style)
-params = st.query_params
-if params.get("logged_in") == ["1"] and params.get("user_email"):
-    st.session_state.logged_in = True
-    st.session_state.user_email = params.get("user_email")[0]
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
+# --- Funktionen ---
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -45,6 +35,29 @@ def check_user_login(email, password):
         return False
     stored_hash = user_page.get("properties", {}).get("Password", {}).get("rich_text", [{}])[0].get("text", {}).get("content", "")
     return stored_hash == hash_password(password)
+
+def load_css():
+    # Beispiel: CSS aus einer lokalen Datei laden (anpassen, wie benötigt)
+    css = """
+    <style>
+    .progress-bar-container {width: 100%; background-color: #e0e0e0; border-radius: 5px; margin-bottom: 10px;}
+    .progress-bar-fill {height: 10px; background-color: #76c7c0; border-radius: 5px;}
+    .playlist-promo {margin: 10px 0; font-size: 14px;}
+    .custom-summary {font-size: 16px; margin-top: 20px;}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+# CSS laden
+load_css()
+
+# On load: Check query parameters (new API style)
+params = st.query_params
+if params.get("logged_in") == ["1"] and params.get("user_email"):
+    st.session_state.logged_in = True
+    st.session_state.user_email = params.get("user_email")[0]
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 
 # --- Sidebar: Login ---
 st.sidebar.title("Login")
