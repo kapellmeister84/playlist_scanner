@@ -1,7 +1,6 @@
 import streamlit as st
 import hashlib, requests, json
 from datetime import datetime
-from playlist_sacnner import check_user_login, hash_password, get_user_data
 
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
@@ -13,25 +12,6 @@ st.title("Registration")
 from utils import load_css
 load_css()
 
-# --- Sidebar: Login always visible and adjust title ---
-st.sidebar.title("Login")
-with st.sidebar.form("login_form"):
-    email = st.text_input("Email", placeholder="user@example.com", value=st.session_state.get("user_email", ""))
-    password = st.text_input("Password", type="password")
-    remember = st.checkbox("Keep me logged in")
-    login_submit = st.form_submit_button("Login")
-if login_submit:
-    if not email or "@" not in email or not password:
-        st.sidebar.error("Please fill in all fields correctly.")
-    else:
-        if check_user_login(email, password):
-            st.session_state.logged_in = True
-            st.session_state.user_email = email
-            st.sidebar.success("Logged in successfully!")
-            if remember:
-                st.query_params = {"logged_in": "1", "user_email": email}
-        else:
-            st.sidebar.error("Login failed. Check your details.")
 
 if "registered" not in st.session_state:
     st.session_state.registered = False
