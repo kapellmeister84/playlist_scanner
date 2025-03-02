@@ -36,7 +36,8 @@ def check_user_login(email, password):
     user_page = get_user_data(email)
     if not user_page:
         return False
-    stored_hash = user_page.get("properties", {}).get("Password", {}).get("rich_text", [{}])[0].get("text", {}).get("content", "")
+    rich_text = user_page.get("properties", {}).get("Password", {}).get("rich_text", [])
+    stored_hash = rich_text[0].get("text", {}).get("content", "") if rich_text else ""
     return stored_hash == hash_password(password)
 
 def load_css():
