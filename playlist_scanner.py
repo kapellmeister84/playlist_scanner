@@ -4,7 +4,8 @@ playlist scanner
 import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
-
+from utils import load_css
+load_css()
 # Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
