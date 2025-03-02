@@ -251,6 +251,7 @@ spotify_playlist_ids_pop = [
     "37i9dQZEVXbNv6cjoMVCyg",  # Viral 50 – Germany
     "37i9dQZEVXbsQiwUKyCsTG",  # Release Radar
     "37i9dQZF1DXbKGrOUA30KN",  # POPLAND – 75 Songs
+    "196MX5AEmUbJZaCIXqLJPp",  # Most Dope
 ]
 
 # Hip-Hop / Rap (non-deutschrap)
