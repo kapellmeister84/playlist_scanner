@@ -155,7 +155,11 @@ def get_spotify_token():
     }
     data = {"grant_type": "client_credentials"}
     response = requests.post(url, headers=headers, data=data)
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+        raise
     return response.json()["access_token"]
 
 def get_playlist_data(playlist_id, token):
