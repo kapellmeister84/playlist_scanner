@@ -9,6 +9,10 @@ from datetime import datetime
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
 DATABASE_ID = st.secrets["DATABASE_ID"]
 NOTION_VERSION = st.secrets["NOTION_VERSION"] if "NOTION_VERSION" in st.secrets else "2022-06-28"
+CLIENT_ID = st.secrets["CLIENT_ID"]
+CLIENT_SECRET = st.secrets["CLIENT_SECRET"]
+
+
 
 st.set_page_config(page_title="playlist scanner", layout="wide", initial_sidebar_state="expanded")
 
@@ -139,8 +143,19 @@ def format_number(n):
     return format(n, ",").replace(",", ".")
 
 def get_spotify_token():
-    response = requests.get("https://open.spotify.com/get_access_token?reason=transport&productType=web_player").json()
-    return response["accessToken"]
+    auth_string = f"{CLIENT_ID}:{CLIENT_SECRET}"
+    auth_bytes = auth_string.encode("utf-8")
+    auth_base64 = base64.b64encode(auth_bytes).decode("utf-8")
+    
+    url = "https://accounts.spotify.com/api/token"
+    headers = {
+        "Authorization": f"Basic {auth_base64}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    data = {"grant_type": "client_credentials"}
+    response = requests.post(url, headers=headers, data=data)
+    response.raise_for_status()
+    return response.json()["access_token"]
 
 def get_playlist_data(playlist_id, token):
     headers = {"Authorization": f"Bearer {token}"}
