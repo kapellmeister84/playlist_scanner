@@ -503,7 +503,7 @@ def generate_pdf_streamlit(results, query, token, show_download_button=True):
     if show_download_button:
         with open(output_filename, "rb") as f:
             st.download_button(
-                label="⬇️ PDF herunterladen",
+                label="⬇️ Download as PDF",
                 data=f,
                 file_name=output_filename,
                 mime="application/pdf",
