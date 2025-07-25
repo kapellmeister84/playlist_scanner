@@ -345,133 +345,131 @@ def generate_pdf_streamlit(results, query, token):
         if bg_img_path:
             pdf.image(bg_img_path, x=0, y=0, w=210, h=297)
 
-    add_page_with_bg()
+    # For each unique track, add a section with its own page(s)
+    for key, data in results.items():
+        track = data["track"]
+        playlists = data["playlists"]
 
-    # --- Title Section ---
-    first_key = next(iter(results))
-    track = results[first_key]["track"]
-    track_name = track.get("name", "Unbekannt")
-    artist_names = ", ".join([a.get("name", "Unbekannt") for a in track.get("artists", [])])
-    pdf.set_font("Arial", "B", 22)
-    pdf.set_text_color(*SPOTIFY_GREEN)
-    pdf.cell(0, 15, safe_text(f"{track_name} by {artist_names}"), ln=True, align="C")
-    pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Arial", "", 14)
-    pdf.cell(0, 10, safe_text(f"Erstellt am: {datetime.now().strftime('%d.%m.%Y – %H:%M:%S')}"), ln=True, align="C")
-    # --- Track-Metadaten ---
-    pdf.set_font("Arial", "", 12)
-    details = []
-    if track.get("release_date"):
-        details.append(f"Released: {track['release_date']}")
-    if track.get("popularity") is not None:
-        details.append(f"Popularity: {track['popularity']}")
-    if track.get("streams") is not None:
-        details.append(f"Streams: {format_number(track['streams'])}")
-    if details:
-        pdf.ln(5)
-        pdf.multi_cell(0, 8, " | ".join(details), align="C")
-    pdf.ln(10)
+        add_page_with_bg()
 
-    # Coverbild
-    cover_url = track.get("cover_url")
-    if cover_url:
-        try:
-            response = requests.get(cover_url)
-            img = Image.open(BytesIO(response.content)).convert("RGB")
-            img.thumbnail((200, 200), Image.LANCZOS)
-            img_io = BytesIO()
-            img.save(img_io, format="JPEG", quality=100)
-            img_io.seek(0)
-            img_path = f"tmp_cover_{hashlib.md5(cover_url.encode()).hexdigest()}.jpg"
-            with open(img_path, "wb") as f:
-                f.write(img_io.read())
-            pdf.ln(5)
-            # Center the image horizontally, width 60mm
-            pdf.image(img_path, x=(210-60)//2, y=pdf.get_y(), w=60)
-            os.remove(img_path)
-            pdf.ln(65)
-        except Exception:
-            pass
-
-    # Zusammenfassung
-    playlists = set()
-    total_listings = 0
-    for res in results.values():
-        for plist in res["playlists"]:
-            playlists.add(plist["name"])
-            total_listings += 1
-    summary = f"Der gesuchte Track wurde in {len(playlists)} Playlist(s) gefunden. Insgesamt {total_listings} Platzierungen."
-    pdf.set_font("Arial", "", 13)
-    pdf.set_text_color(255, 255, 255)
-    pdf.multi_cell(0, 8, safe_text(summary))
-    pdf.ln(5)
-
-    # --- Playlists Section ---
-    playlist_entries = []
-    # Remove duplicate playlist links by (playlist name, url)
-    seen_playlists = set()
-    for res in results.values():
-        for plist in res["playlists"]:
-            pl_key = (plist.get("name", ""), plist.get("url", ""))
-            if pl_key not in seen_playlists:
-                playlist_entries.append((res, plist))
-                seen_playlists.add(pl_key)
-
-    ENTRIES_PER_PAGE = 3
-    for idx, (res, plist) in enumerate(playlist_entries):
-        # Add new page (with bg) every ENTRIES_PER_PAGE
-        if idx > 0 and idx % ENTRIES_PER_PAGE == 0:
-            add_page_with_bg()
-        # Section heading
-        name = plist.get("name", "Unknown Playlist")
-        owner = plist.get("owner", "N/A")
-        followers = plist.get("followers", "N/A")
-        position = plist.get("position", "-")
-        url = plist.get("url", "")
-        desc = plist.get("description", "")
-        cover = plist.get("cover")
-
-        pdf.set_fill_color(*SPOTIFY_GREEN)
+        # Header: Track name by artist
+        track_name = track.get("name", "Unbekannt")
+        artist_names = ", ".join([a.get("name", "Unbekannt") for a in track.get("artists", [])])
+        pdf.set_font("Arial", "B", 22)
+        pdf.set_text_color(*SPOTIFY_GREEN)
+        pdf.cell(0, 15, safe_text(f"{track_name} by {artist_names}"), ln=True, align="C")
         pdf.set_text_color(255, 255, 255)
-        pdf.set_font("Arial", "B", 13)
-        pdf.cell(0, 10, safe_text(f"Playlist: {name}"), ln=True, fill=True)
-        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("Arial", "", 14)
+        pdf.cell(0, 10, safe_text(f"Erstellt am: {datetime.now().strftime('%d.%m.%Y – %H:%M:%S')}"), ln=True, align="C")
+        # Track-Metadaten
         pdf.set_font("Arial", "", 12)
-        pdf.cell(0, 8, safe_text(f"Kurator: {owner} – Follower: {followers} – Position: {position}"), ln=True)
-        if desc:
-            pdf.set_font("Arial", "", 11)
-            pdf.multi_cell(0, 7, safe_text(desc))
-        if url:
-            pdf.set_text_color(29, 185, 84)
-            # Show only the URL as text, or as clickable
-            pdf.cell(0, 8, safe_text(url), ln=True, link=url)
-            pdf.set_text_color(255, 255, 255)
+        details = []
+        if track.get("release_date"):
+            details.append(f"Released: {track['release_date']}")
+        if track.get("popularity") is not None:
+            details.append(f"Popularity: {track['popularity']}")
+        if track.get("streams") is not None:
+            details.append(f"Streams: {format_number(track['streams'])}")
+        if details:
+            pdf.ln(5)
+            pdf.multi_cell(0, 8, " | ".join(details), align="C")
+        pdf.ln(10)
 
-        # Playlist-Coverbild
-        if cover:
+        # Cover image (centered)
+        cover_url = track.get("cover_url")
+        if cover_url:
             try:
-                response = requests.get(cover)
+                response = requests.get(cover_url)
                 img = Image.open(BytesIO(response.content)).convert("RGB")
                 img.thumbnail((200, 200), Image.LANCZOS)
                 img_io = BytesIO()
                 img.save(img_io, format="JPEG", quality=100)
                 img_io.seek(0)
-                img_path = f"tmp_{hashlib.md5(cover.encode()).hexdigest()}.jpg"
+                img_path = f"tmp_cover_{hashlib.md5(cover_url.encode()).hexdigest()}.jpg"
                 with open(img_path, "wb") as f:
                     f.write(img_io.read())
-                y = pdf.get_y()
-                # Place at right margin, slightly higher (y - 25), w=30
-                pdf.image(img_path, x=170, y=y - 25, w=30)
+                pdf.ln(5)
+                # Center the image horizontally, width 60mm
+                pdf.image(img_path, x=(210-60)//2, y=pdf.get_y(), w=60)
                 os.remove(img_path)
+                pdf.ln(65)
             except Exception:
                 pass
+        else:
+            pdf.ln(10)
 
-        # Layout improvements: add spacing and section divider
-        pdf.ln(6)
-        pdf.set_draw_color(*SPOTIFY_GREEN)
-        pdf.set_line_width(0.8)
-        pdf.line(pdf.l_margin, pdf.get_y(), 210 - pdf.r_margin, pdf.get_y())
-        pdf.ln(4)
+        # Playlists summary for this track
+        playlist_names = set()
+        for plist in playlists:
+            playlist_names.add(plist["name"])
+        summary = f"Der Track wurde in {len(playlist_names)} Playlist(s) gefunden. Insgesamt {len(playlists)} Platzierungen."
+        pdf.set_font("Arial", "", 13)
+        pdf.set_text_color(255, 255, 255)
+        pdf.multi_cell(0, 8, safe_text(summary))
+        pdf.ln(5)
+
+        # --- Playlists Section (for this track only) ---
+        playlist_entries = []
+        seen_playlists = set()
+        for plist in playlists:
+            pl_key = (plist.get("name", ""), plist.get("url", ""))
+            if pl_key not in seen_playlists:
+                playlist_entries.append(plist)
+                seen_playlists.add(pl_key)
+
+        ENTRIES_PER_PAGE = 3
+        for idx, plist in enumerate(playlist_entries):
+            # Add new page (with bg) every ENTRIES_PER_PAGE (except first page)
+            if idx > 0 and idx % ENTRIES_PER_PAGE == 0:
+                add_page_with_bg()
+            # Section heading
+            name = plist.get("name", "Unknown Playlist")
+            owner = plist.get("owner", "N/A")
+            followers = plist.get("followers", "N/A")
+            position = plist.get("position", "-")
+            url = plist.get("url", "")
+            desc = plist.get("description", "")
+            cover = plist.get("cover")
+
+            pdf.set_fill_color(*SPOTIFY_GREEN)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font("Arial", "B", 13)
+            pdf.cell(0, 10, safe_text(f"Playlist: {name}"), ln=True, fill=True)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font("Arial", "", 12)
+            pdf.cell(0, 8, safe_text(f"Kurator: {owner} – Follower: {followers} – Position: {position}"), ln=True)
+            if desc:
+                pdf.set_font("Arial", "", 11)
+                pdf.multi_cell(0, 7, safe_text(desc))
+            if url:
+                pdf.set_text_color(29, 185, 84)
+                pdf.cell(0, 8, safe_text(url), ln=True, link=url)
+                pdf.set_text_color(255, 255, 255)
+
+            # Playlist cover image
+            if cover:
+                try:
+                    response = requests.get(cover)
+                    img = Image.open(BytesIO(response.content)).convert("RGB")
+                    img.thumbnail((200, 200), Image.LANCZOS)
+                    img_io = BytesIO()
+                    img.save(img_io, format="JPEG", quality=100)
+                    img_io.seek(0)
+                    img_path = f"tmp_{hashlib.md5(cover.encode()).hexdigest()}.jpg"
+                    with open(img_path, "wb") as f:
+                        f.write(img_io.read())
+                    y = pdf.get_y()
+                    pdf.image(img_path, x=170, y=y - 25, w=30)
+                    os.remove(img_path)
+                except Exception:
+                    pass
+
+            # Layout improvements: add spacing and section divider
+            pdf.ln(6)
+            pdf.set_draw_color(*SPOTIFY_GREEN)
+            pdf.set_line_width(0.8)
+            pdf.line(pdf.l_margin, pdf.get_y(), 210 - pdf.r_margin, pdf.get_y())
+            pdf.ln(4)
 
     # Clean up temp bg image
     if bg_img_path and os.path.exists(bg_img_path):
