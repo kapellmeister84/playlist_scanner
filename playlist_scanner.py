@@ -5,6 +5,10 @@ import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
 import base64
+import asyncio
+from pathlib import Path
+from playwright.async_api import async_playwright
+
 
 # Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
@@ -12,6 +16,60 @@ DATABASE_ID = st.secrets["DATABASE_ID"]
 NOTION_VERSION = st.secrets["NOTION_VERSION"] if "NOTION_VERSION" in st.secrets else "2022-06-28"
 CLIENT_ID = st.secrets["CLIENT_ID"]
 CLIENT_SECRET = st.secrets["CLIENT_SECRET"]
+
+
+# --- Token handling ---
+TOKEN_FILE = "token.txt"
+
+def load_token():
+    if Path(TOKEN_FILE).exists():
+        return Path(TOKEN_FILE).read_text().strip()
+    return None
+
+def save_token(token):
+    Path(TOKEN_FILE).write_text(token)
+
+def is_token_valid(token):
+    url = "https://api.spotify.com/v1/playlists/37i9dQZF1DX4JAvHpjipBk"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        return requests.get(url, headers=headers).status_code == 200
+    except:
+        return False
+
+async def get_new_token():
+    token = None
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=False)
+        context = await browser.new_context()
+
+        async def handle_request(request):
+            nonlocal token
+            auth = request.headers.get("authorization")
+            if auth and auth.startswith("Bearer "):
+                token = auth.split(" ")[1]
+
+        context.on("request", handle_request)
+        page = await context.new_page()
+        await page.goto("https://open.spotify.com/")
+        st.warning("Bitte logge dich im Spotify-Fenster ein und kehre danach zurück.")
+        while not token:
+            await asyncio.sleep(1)
+        await browser.close()
+
+    if token:
+        save_token(token)
+        st.success("Spotify-Token erfolgreich gespeichert.")
+        return token
+    else:
+        st.error("Kein Token gefunden.")
+        return None
+
+def ensure_token():
+    token = load_token()
+    if not token or not is_token_valid(token):
+        token = asyncio.run(get_new_token())
+    return token
 
 
 
@@ -144,23 +202,7 @@ def format_number(n):
     return format(n, ",").replace(",", ".")
 
 def get_spotify_token():
-    auth_string = f"{CLIENT_ID}:{CLIENT_SECRET}"
-    auth_bytes = auth_string.encode("utf-8")
-    auth_base64 = base64.b64encode(auth_bytes).decode("utf-8")
-    
-    url = "https://accounts.spotify.com/api/token"
-    headers = {
-        "Authorization": f"Basic {auth_base64}",
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    data = {"grant_type": "client_credentials"}
-    response = requests.post(url, headers=headers, data=data)
-    try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP Error: {e.response.status_code} - {e.response.text}")
-        raise
-    return response.json()["access_token"]
+    return ensure_token()
 
 def get_playlist_data(playlist_id, token):
     headers = {"Authorization": f"Bearer {token}"}
