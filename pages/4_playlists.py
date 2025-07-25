@@ -27,6 +27,14 @@ def load_playlists():
         st.error(f"Fehler beim Laden der Playlisten: {e}")
         return {"spotify": {}, "deezer": {}}
 
+# Neue Funktion zum Speichern der Playlists
+def save_playlists(data):
+    try:
+        with open(PLAYLISTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        st.error(f"Fehler beim Speichern der Playlisten: {e}")
+
 def get_spotify_playlist_data(playlist_id, token):
     headers = {"Authorization": f"Bearer {token}"}
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}"
@@ -134,8 +142,7 @@ if submit_new_link and new_link:
             playlists = load_playlists()
             if new_id not in playlists["spotify"]:
                 playlists["spotify"][new_id] = "Unnamed Playlist"
-                with open(PLAYLISTS_FILE, "w", encoding="utf-8") as f:
-                    json.dump(playlists, f, indent=2, ensure_ascii=False)
+                save_playlists(playlists)
                 st.success("Spotify playlist added.")
             else:
                 st.info("This Spotify playlist is already tracked.")
@@ -145,8 +152,7 @@ if submit_new_link and new_link:
             playlists = load_playlists()
             if new_id not in playlists["deezer"]:
                 playlists["deezer"][new_id] = "Unnamed Playlist"
-                with open(PLAYLISTS_FILE, "w", encoding="utf-8") as f:
-                    json.dump(playlists, f, indent=2, ensure_ascii=False)
+                save_playlists(playlists)
                 st.success("Deezer playlist added.")
             else:
                 st.info("This Deezer playlist is already tracked.")
