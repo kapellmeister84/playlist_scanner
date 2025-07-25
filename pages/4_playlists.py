@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import json
 import requests
@@ -57,6 +55,8 @@ st.markdown("Diese Seite zeigt alle Playlists aus der `playlists.json`, geordnet
 token = load_token()
 if not token:
     st.warning("Kein Spotify Token gefunden. Bitte im Hauptbereich einloggen, um Spotify-Daten zu laden.")
+else:
+    st.info("Spotify-Token gefunden, versuche Playlists zu laden...")
 
 playlists = load_playlists()
 
@@ -67,7 +67,7 @@ with col1:
     for pid, name in playlists.get("spotify", {}).items():
         data = get_spotify_playlist_data(pid, token) if token else None
         if not data:
-            st.write(f"{name} (ID: {pid}) – [Details nicht ladbar]")
+            st.write(f"{name} (ID: {pid}) – [Details nicht ladbar, evtl. Token ungültig oder API-Fehler]")
             continue
         st.markdown(f"""
             <div style="margin-bottom: 20px; padding: 10px; border-radius: 10px; background-color: #1DB95410;">
