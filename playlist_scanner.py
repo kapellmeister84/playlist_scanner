@@ -312,13 +312,15 @@ def generate_track_key(track):
 
 # --- PDF Generation Function ---
 def generate_pdf_streamlit(results, query, token):
+    def safe_text(text):
+        return text.encode("latin-1", "replace").decode("latin-1")
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, f"Playlist Scan Report: {query}", ln=True, align="C")
+    pdf.cell(0, 10, safe_text(f"Playlist Scan Report: {query}"), ln=True, align="C")
     pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True)
+    pdf.cell(0, 10, safe_text(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"), ln=True)
     pdf.ln(5)
 
     # Summary
@@ -331,7 +333,7 @@ def generate_pdf_streamlit(results, query, token):
             total_listings += 1
     playlist_count = len(playlists)
     summary = f"Songs found: {song_count}\nPlaylists: {playlist_count}\nTotal listings: {total_listings}"
-    pdf.multi_cell(0, 10, summary)
+    pdf.multi_cell(0, 10, safe_text(summary))
     pdf.ln(5)
 
     for res in results.values():
@@ -346,7 +348,7 @@ def generate_pdf_streamlit(results, query, token):
         cover_url = track.get("cover_url") or (images[0].get("url") if images else None)
         # Track Header
         pdf.set_font("Arial", "B", 13)
-        pdf.cell(0, 10, f"{track_name} – {artist_names}", ln=True)
+        pdf.cell(0, 10, safe_text(f"{track_name} – {artist_names}"), ln=True)
         pdf.set_font("Arial", "", 11)
         details = []
         if release_date:
@@ -356,7 +358,7 @@ def generate_pdf_streamlit(results, query, token):
         if streams is not None:
             details.append(f"Streams: {format_number(streams)}")
         if details:
-            pdf.multi_cell(0, 8, " | ".join(details))
+            pdf.multi_cell(0, 8, safe_text(" | ".join(details)))
         # Cover
         if cover_url:
             try:
@@ -376,13 +378,13 @@ def generate_pdf_streamlit(results, query, token):
         pdf.ln(2)
         # Playlists
         pdf.set_font("Arial", "I", 11)
-        pdf.cell(0, 8, "Playlists:", ln=True)
+        pdf.cell(0, 8, safe_text("Playlists:"), ln=True)
         pdf.set_font("Arial", "", 10)
         for plist in res["playlists"]:
             line = f"- {plist['name']} (#{plist.get('position', '-')}, {plist['platform'].capitalize()}) | Followers: {plist.get('followers', 'N/A')} | Owner: {plist.get('owner', 'N/A')}"
             if plist.get("description"):
                 line += f" | {plist['description']}"
-            pdf.multi_cell(0, 7, line)
+            pdf.multi_cell(0, 7, safe_text(line))
         pdf.ln(4)
 
     filename = f"playlist_scan_{query}.pdf"
