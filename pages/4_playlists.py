@@ -69,9 +69,11 @@ if token:
             st.text(f"Token: {token[:20]}...")
             st.text(f"Response: {resp.text}")
             token_valid = False
+            st.stop()
     except Exception as e:
         st.warning(f"Fehler beim Testen des Spotify Tokens: {e}")
         token_valid = False
+        st.stop()
 
 if not token:
     st.warning("Kein Spotify Token gefunden. Bitte im Hauptbereich einloggen, um Spotify-Daten zu laden.")
