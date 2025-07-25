@@ -17,6 +17,7 @@ def get_spotify_playlist_data(playlist_id, token):
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}"
     r = requests.get(url, headers=headers)
     if r.status_code != 200:
+        st.warning(f"Spotify API Fehler ({r.status_code}) für Playlist ID {playlist_id}")
         return None
     data = r.json()
     return {
@@ -45,7 +46,7 @@ def get_deezer_playlist_data(playlist_id):
 from pathlib import Path
 def load_token():
     token_file = Path("token.txt")
-    return token_file.read_text().strip() if token_file.exists() else None
+    return token_file.read_text(encoding="utf-8").strip() if token_file.exists() else None
 
 # Page setup
 st.set_page_config(page_title="Getrackte Playlists", layout="wide")
@@ -53,6 +54,9 @@ st.title("📋 Übersicht aller getrackten Playlists")
 st.markdown("Diese Seite zeigt alle Playlists aus der `playlists.json`, geordnet nach Spotify und Deezer.")
 
 token = load_token()
+if token and len(token) < 50:
+    st.warning("A Spotify token was found, but it seems too short. It might be expired or invalid.")
+
 if not token:
     st.warning("Kein Spotify Token gefunden. Bitte im Hauptbereich einloggen, um Spotify-Daten zu laden.")
 else:
