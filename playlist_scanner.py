@@ -568,8 +568,10 @@ if st.session_state.logged_in:
 
     import concurrent.futures
 
-    # Only scan if submit is clicked and results are not in session_state
-    if submit and "scan_results" not in st.session_state:
+    # Only scan if submit is clicked: clear old results and rerun to refresh
+    if submit:
+        st.session_state.pop("scan_results", None)
+        st.experimental_rerun()
         results = {}
         total_listings = 0
         unique_playlists = set()
