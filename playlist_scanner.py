@@ -361,9 +361,9 @@ def generate_pdf_streamlit(results, query, token):
     track = results[first_key]["track"]
     track_name = track.get("name", "Unbekannt")
     artist_names = ", ".join([a.get("name", "Unbekannt") for a in track.get("artists", [])])
-    pdf.set_font("Arial", "B", 16)
+    pdf.set_font("Arial", "B", 20)
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 10, safe_text(f"{track_name} by {artist_names}"), ln=True)
+    pdf.cell(0, 12, safe_text(f"{track_name} by {artist_names}"), ln=True, align="C")
     pdf.set_text_color(255, 255, 255)
     pdf.ln(5)
 
@@ -395,7 +395,7 @@ def generate_pdf_streamlit(results, query, token):
         for plist in res["playlists"]:
             playlists.add(plist["name"])
             total_listings += 1
-    summary = f"Zusammenfassung: Der gesuchte Track wurde in {len(playlists)} Playlist(s) gefunden. Insgesamt {total_listings} Platzierungen."
+    summary = f"Der gesuchte Track wurde in {len(playlists)} Playlist(s) gefunden. Insgesamt {total_listings} Platzierungen."
     pdf.set_font("Arial", "", 13)
     pdf.set_text_color(255, 255, 255)
     pdf.multi_cell(0, 8, safe_text(summary))
