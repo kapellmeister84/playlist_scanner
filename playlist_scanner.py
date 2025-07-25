@@ -696,8 +696,11 @@ if st.session_state.logged_in:
                 summary_text = f"{song_title} is placed in {playlist_count} playlists."
             st.markdown(f"<div class='custom-summary'>{summary_text}</div>", unsafe_allow_html=True)
 
-            # Generate PDF after rendering results, no download button here
-            generate_pdf_streamlit(results, search_term, spotify_token, show_download_button=False)
+            # PDF generation is now triggered after rendering all results, with spinner
+
+            # PDF generation after all results are displayed, with progress spinner
+            with st.spinner("📄 PDF wird im Hintergrund erstellt..."):
+                generate_pdf_streamlit(results, search_term, spotify_token, show_download_button=False)
             # Set session_state flag to indicate PDF is ready
             st.session_state.pdf_ready = True
 
@@ -783,4 +786,4 @@ if st.session_state.logged_in:
             except Exception:
                 st.sidebar.markdown("⬇️ PDF wird vorbereitet...")
         else:
-            st.sidebar.markdown("⬇️ PDF wird vorbereitet...")
+            st.sidebar.markdown("📄 PDF wird im Hintergrund erstellt...")
