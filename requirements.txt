@@ -1,0 +1,6 @@
+streamlit
+requests
+playwright
+rich
+fpdf
+pillow
