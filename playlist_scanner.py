@@ -333,7 +333,7 @@ def generate_track_key(track):
 
 
 # --- PDF Generation Function ---
-def generate_pdf_streamlit(results, query, token):
+def generate_pdf_streamlit(results, query, token, show_download_button=True):
     import hashlib
     import re
     from urllib.request import urlopen
@@ -496,18 +496,19 @@ def generate_pdf_streamlit(results, query, token):
     if bg_img_path and os.path.exists(bg_img_path):
         os.remove(bg_img_path)
 
-    # --- PDF Download Button for Streamlit ---
+    # --- PDF Output ---
     output_filename = f"playlist_scan_{query.replace(' ', '_')}.pdf"
     pdf.output(output_filename)
-
-    with open(output_filename, "rb") as f:
-        st.download_button(
-            label="⬇️ PDF herunterladen",
-            data=f,
-            file_name=output_filename,
-            mime="application/pdf",
-            key=f"download_button_{output_filename}_{datetime.now().timestamp()}"
-        )
+    # Only show download button if requested
+    if show_download_button:
+        with open(output_filename, "rb") as f:
+            st.download_button(
+                label="⬇️ PDF herunterladen",
+                data=f,
+                file_name=output_filename,
+                mime="application/pdf",
+                key=f"download_button_{output_filename}_{datetime.now().timestamp()}"
+            )
 
 PLAYLISTS_FILE = "playlists.json"
 
@@ -665,9 +666,8 @@ if st.session_state.logged_in:
             "unique_playlists": list(unique_playlists)
         }
 
-        # Call PDF generation automatically if results exist
-        if results:
-            generate_pdf_streamlit(results, search_term, spotify_token)
+        # Remove: Call PDF generation automatically if results exist
+        # PDF generation will be done after rendering results
 
     # Display results and PDF only if scan_results exist in session_state
     if "scan_results" in st.session_state:
@@ -696,8 +696,10 @@ if st.session_state.logged_in:
                 summary_text = f"{song_title} is placed in {playlist_count} playlists."
             st.markdown(f"<div class='custom-summary'>{summary_text}</div>", unsafe_allow_html=True)
 
-            # Generate PDF automatically (no button)
-            generate_pdf_streamlit(results, search_term, spotify_token)
+            # Generate PDF after rendering results, no download button here
+            generate_pdf_streamlit(results, search_term, spotify_token, show_download_button=False)
+            # Set session_state flag to indicate PDF is ready
+            st.session_state.pdf_ready = True
 
             for res in results.values():
                 track = res["track"]
@@ -760,5 +762,25 @@ if st.session_state.logged_in:
                     st.markdown(playlist_html, unsafe_allow_html=True)
         else:
             st.warning(f"I'm sorry, {search_term} couldn't be found. 😔")
+            st.session_state.pdf_ready = False
 
 
+
+    # --- Sidebar PDF Download Button or Preparation Notice ---
+    if "scan_results" in st.session_state:
+        search_term = st.session_state.scan_results.get("search_term", "")
+        if "pdf_ready" in st.session_state and st.session_state.pdf_ready:
+            output_filename = f"playlist_scan_{search_term.replace(' ', '_')}.pdf"
+            try:
+                with open(output_filename, "rb") as f:
+                    st.sidebar.download_button(
+                        label="⬇️ PDF herunterladen",
+                        data=f,
+                        file_name=output_filename,
+                        mime="application/pdf",
+                        key="sidebar_pdf_download"
+                    )
+            except Exception:
+                st.sidebar.markdown("⬇️ PDF wird vorbereitet...")
+        else:
+            st.sidebar.markdown("⬇️ PDF wird vorbereitet...")
