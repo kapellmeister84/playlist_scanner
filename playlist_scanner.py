@@ -37,14 +37,15 @@ CLIENT_SECRET = st.secrets["CLIENT_SECRET"]
 
 # --- Token handling ---
 TOKEN_FILE = "token.txt"
+TOKEN_PATH = Path(TOKEN_FILE)
 
 def load_token():
-    if Path(TOKEN_FILE).exists():
-        return Path(TOKEN_FILE).read_text().strip()
+    if TOKEN_PATH.exists():
+        return TOKEN_PATH.read_text().strip()
     return None
 
 def save_token(token):
-    Path(TOKEN_FILE).write_text(token)
+    TOKEN_PATH.write_text(token)
 
 def is_token_valid(token):
     url = "https://api.spotify.com/v1/playlists/37i9dQZF1DX4JAvHpjipBk"
@@ -86,6 +87,7 @@ def ensure_token():
     token = load_token()
     if not token or not is_token_valid(token):
         token = asyncio.run(get_new_token())
+        st.info("⚠️ Token wurde geladen und wird zwischengespeichert in 'token.txt'")
     return token
 
 
@@ -459,38 +461,64 @@ if st.session_state.logged_in:
     unique_playlists = set()
     total_playlists = len(all_playlists)
     
-    for i, (pid, platform) in enumerate(all_playlists, start=1):
+    import concurrent.futures
+
+    def scan_playlist_wrapper(args):
+        pid, platform, token, search_term = args
         if platform == "spotify":
-            playlist = get_playlist_data(pid, spotify_token)
+            playlist = get_playlist_data(pid, token)
             if not playlist:
-                update_progress_bar(i, total_playlists)
-                continue
+                return None
             playlist_name = playlist.get("name", "Unknown Playlist")
             playlist_followers = playlist.get("followers", {}).get("total", "N/A")
             if isinstance(playlist_followers, int):
                 playlist_followers = format_number(playlist_followers)
             playlist_owner = playlist.get("owner", {}).get("display_name", "N/A")
             playlist_description = playlist.get("description", "")
-            status_message.info(f"Scanning for '{search_term}' in '{playlist_name}'")
-            tracks = find_tracks_by_artist(pid, search_term, spotify_token)
+            tracks = find_tracks_by_artist(pid, search_term, token)
             cover = playlist.get("images", [{}])[0].get("url")
             playlist_url = f"https://open.spotify.com/playlist/{pid}"
         else:
             playlist = get_deezer_playlist_data(pid)
             if not playlist:
-                update_progress_bar(i, total_playlists)
-                continue
+                return None
             playlist_name = playlist.get("title", "Unknown Playlist")
             playlist_followers = playlist.get("fans", "N/A")
             if isinstance(playlist_followers, int):
                 playlist_followers = format_number(playlist_followers)
             playlist_owner = playlist.get("user", {}).get("name", "N/A")
             playlist_description = playlist.get("description", "")
-            status_message.info(f"Scanning for '{search_term}' in '{playlist_name}'")
             tracks = find_tracks_by_artist_deezer(pid, search_term)
             cover = playlist.get("picture")
             playlist_url = f"https://www.deezer.com/playlist/{pid}"
-        
+        return {
+            "platform": platform,
+            "playlist_name": playlist_name,
+            "playlist_owner": playlist_owner,
+            "playlist_followers": playlist_followers,
+            "playlist_description": playlist_description,
+            "tracks": tracks,
+            "cover": cover,
+            "url": playlist_url
+        }
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        tasks = [(pid, platform, spotify_token, search_term) for pid, platform in all_playlists]
+        future_results = list(executor.map(scan_playlist_wrapper, tasks))
+
+    for i, result in enumerate(future_results, start=1):
+        if not result:
+            update_progress_bar(i, total_playlists)
+            continue
+        playlist_name = result["playlist_name"]
+        playlist_followers = result["playlist_followers"]
+        playlist_owner = result["playlist_owner"]
+        playlist_description = result["playlist_description"]
+        tracks = result["tracks"]
+        cover = result["cover"]
+        playlist_url = result["url"]
+        platform = result["platform"]
+
         for match in tracks:
             track = match['track']
             position = match['position']
@@ -509,7 +537,7 @@ if st.session_state.logged_in:
                 "owner": playlist_owner,
                 "description": playlist_description
             })
-        
+
         update_progress_bar(i, total_playlists)
         time.sleep(0.1)
     
