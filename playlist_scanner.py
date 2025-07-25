@@ -7,8 +7,6 @@ import requests, json, time, hashlib
 from datetime import datetime
 import base64
 import asyncio
-import shutil
-import subprocess
 from pathlib import Path
 from playwright.async_api import async_playwright
 from fpdf import FPDF
@@ -16,6 +14,8 @@ from PIL import Image
 from io import BytesIO
 from collections import defaultdict
 import os
+import shutil
+import subprocess
 
 def ensure_playwright_installed():
     if not shutil.which("playwright"):
@@ -256,7 +256,8 @@ def get_track_additional_info(track_id, token):
     data = requests.get(url, headers=headers).json()
     playcount = get_spotify_playcount(track_id, token)
     release_date = data.get("album", {}).get("release_date", "N/A")
-    cover_url = data.get("album", {}).get("images", [{}])[0].get("url", "")
+    images = data.get("album", {}).get("images", [])
+    cover_url = images[0].get("url", "") if images else ""
     return {"playcount": playcount, "release_date": release_date, "cover_url": cover_url}
 
 def find_tracks_by_artist(playlist_id, query, token):
@@ -539,6 +540,8 @@ if st.session_state.logged_in:
     else:
         st.warning(f"I'm sorry, {search_term} couldn't be found. 😔")
 
+
+
 # --- PDF Generation Function ---
 def generate_pdf_streamlit(results, query, token):
     pdf = FPDF()
@@ -570,7 +573,9 @@ def generate_pdf_streamlit(results, query, token):
         release_date = track.get("release_date", "")
         streams = track.get("streams")
         popularity = track.get("popularity")
-        cover_url = track.get("cover_url") or (track.get("album", {}).get("images", [{}])[0].get("url") if track.get("album", {}).get("images") else None)
+        album = track.get("album", {})
+        images = album.get("images", [])
+        cover_url = track.get("cover_url") or (images[0].get("url") if images else None)
         # Track Header
         pdf.set_font("Arial", "B", 13)
         pdf.cell(0, 10, f"{track_name} – {artist_names}", ln=True)
