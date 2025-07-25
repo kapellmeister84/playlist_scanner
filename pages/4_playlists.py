@@ -18,6 +18,8 @@ def get_spotify_playlist_data(playlist_id, token):
     r = requests.get(url, headers=headers)
     if r.status_code != 200:
         st.warning(f"Spotify API Fehler ({r.status_code}) für Playlist ID {playlist_id}")
+        st.text(f"Token: {token[:20]}...")  # show beginning of token for debugging
+        st.text(f"Response: {r.text}")
         return None
     data = r.json()
     return {
@@ -57,9 +59,23 @@ token = load_token()
 if token and len(token) < 50:
     st.warning("A Spotify token was found, but it seems too short. It might be expired or invalid.")
 
+# Optional: Check if token is valid by making a dummy request to Spotify API
+token_valid = True
+if token:
+    try:
+        resp = requests.get("https://api.spotify.com/v1/me", headers={"Authorization": f"Bearer {token}"})
+        if resp.status_code != 200:
+            st.warning(f"Spotify Token scheint ungültig oder abgelaufen (Status {resp.status_code})")
+            st.text(f"Token: {token[:20]}...")
+            st.text(f"Response: {resp.text}")
+            token_valid = False
+    except Exception as e:
+        st.warning(f"Fehler beim Testen des Spotify Tokens: {e}")
+        token_valid = False
+
 if not token:
     st.warning("Kein Spotify Token gefunden. Bitte im Hauptbereich einloggen, um Spotify-Daten zu laden.")
-else:
+elif token_valid:
     st.info("Spotify-Token gefunden, versuche Playlists zu laden...")
 
 playlists = load_playlists()
