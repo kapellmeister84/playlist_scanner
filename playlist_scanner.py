@@ -314,6 +314,7 @@ def generate_track_key(track):
 # --- PDF Generation Function ---
 def generate_pdf_streamlit(results, query, token):
     import hashlib
+    from urllib.request import urlopen
     def safe_text(text):
         return text.encode("latin-1", "replace").decode("latin-1")
 
@@ -324,10 +325,16 @@ def generate_pdf_streamlit(results, query, token):
     # Spotify-Grün
     SPOTIFY_GREEN = (29, 185, 84)
 
-    # Hintergrundbild (optional: Pfad zu lokalem Bild)
-    background_path = "background.jpg"
-    if os.path.exists(background_path):
-        pdf.image(background_path, x=0, y=0, w=210, h=297)
+    # Hintergrundbild von URL laden
+    try:
+        response = urlopen("https://iili.io/3dchREl.jpg")
+        bg_img = Image.open(BytesIO(response.read())).convert("RGB")
+        img_path = "background_temp.jpg"
+        bg_img.save(img_path)
+        pdf.image(img_path, x=0, y=0, w=210, h=297)
+        os.remove(img_path)
+    except Exception as e:
+        print(f"Background image error: {e}")
 
     # Überschrift
     pdf.set_font("Arial", "B", 22)
@@ -355,16 +362,16 @@ def generate_pdf_streamlit(results, query, token):
         try:
             response = requests.get(cover_url)
             img = Image.open(BytesIO(response.content)).convert("RGB")
-            img.thumbnail((90, 90))
+            img.thumbnail((120, 120), Image.ANTIALIAS)
             img_io = BytesIO()
-            img.save(img_io, format="JPEG")
+            img.save(img_io, format="JPEG", quality=95)
             img_io.seek(0)
             img_path = f"tmp_cover_{hashlib.md5(cover_url.encode()).hexdigest()}.jpg"
             with open(img_path, "wb") as f:
                 f.write(img_io.read())
             pdf.image(img_path, x=pdf.get_x(), y=pdf.get_y(), w=30)
             os.remove(img_path)
-        except:
+        except Exception:
             pass
         pdf.ln(35)
 
@@ -410,9 +417,9 @@ def generate_pdf_streamlit(results, query, token):
                 try:
                     response = requests.get(cover)
                     img = Image.open(BytesIO(response.content)).convert("RGB")
-                    img.thumbnail((60, 60))
+                    img.thumbnail((120, 120), Image.ANTIALIAS)
                     img_io = BytesIO()
-                    img.save(img_io, format="JPEG")
+                    img.save(img_io, format="JPEG", quality=95)
                     img_io.seek(0)
                     img_path = f"tmp_{hashlib.md5(cover.encode()).hexdigest()}.jpg"
                     with open(img_path, "wb") as f:
@@ -420,14 +427,14 @@ def generate_pdf_streamlit(results, query, token):
                     y = pdf.get_y()
                     pdf.image(img_path, x=170, y=y - 30, w=25)
                     os.remove(img_path)
-                except:
+                except Exception:
                     pass
-            pdf.ln(12)
 
-    filename = f"playlist_scan_{query}.pdf"
-    pdf.output(filename)
-    with open(filename, "rb") as f:
-        st.download_button("⬇️ Download PDF", f, file_name=filename, mime="application/pdf")
+            # Layout improvements: add spacing and section divider
+            pdf.ln(6)
+            pdf.set_draw_color(*SPOTIFY_GREEN)
+            pdf.line(pdf.l_margin, pdf.get_y(), 210 - pdf.r_margin, pdf.get_y())
+            pdf.ln(4)
 
 PLAYLISTS_FILE = "playlists.json"
 
@@ -660,83 +667,3 @@ if st.session_state.logged_in:
         st.warning(f"I'm sorry, {search_term} couldn't be found. 😔")
 
 
-
-# --- PDF Generation Function ---
-def generate_pdf_streamlit(results, query, token):
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, f"Playlist Scan Report: {query}", ln=True, align="C")
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True)
-    pdf.ln(5)
-
-    # Summary
-    song_count = len(results)
-    playlists = set()
-    total_listings = 0
-    for res in results.values():
-        for plist in res["playlists"]:
-            playlists.add(plist["name"])
-            total_listings += 1
-    playlist_count = len(playlists)
-    summary = f"Songs found: {song_count}\nPlaylists: {playlist_count}\nTotal listings: {total_listings}"
-    pdf.multi_cell(0, 10, summary)
-    pdf.ln(5)
-
-    for res in results.values():
-        track = res["track"]
-        track_name = track.get("name", "Unknown")
-        artist_names = ", ".join([a.get("name", "Unknown") for a in track.get("artists", [])])
-        release_date = track.get("release_date", "")
-        streams = track.get("streams")
-        popularity = track.get("popularity")
-        album = track.get("album", {})
-        images = album.get("images", [])
-        cover_url = track.get("cover_url") or (images[0].get("url") if images else None)
-        # Track Header
-        pdf.set_font("Arial", "B", 13)
-        pdf.cell(0, 10, f"{track_name} – {artist_names}", ln=True)
-        pdf.set_font("Arial", "", 11)
-        details = []
-        if release_date:
-            details.append(f"Released: {release_date}")
-        if popularity is not None:
-            details.append(f"Popularity: {popularity}")
-        if streams is not None:
-            details.append(f"Streams: {format_number(streams)}")
-        if details:
-            pdf.multi_cell(0, 8, " | ".join(details))
-        # Cover
-        if cover_url:
-            try:
-                response = requests.get(cover_url)
-                img = Image.open(BytesIO(response.content)).convert("RGB")
-                img.thumbnail((80, 80))
-                img_io = BytesIO()
-                img.save(img_io, format="JPEG")
-                img_io.seek(0)
-                img_path = f"tmp_cover_{hashlib.md5(cover_url.encode()).hexdigest()}.jpg"
-                with open(img_path, "wb") as f:
-                    f.write(img_io.read())
-                pdf.image(img_path, w=30)
-                os.remove(img_path)
-            except Exception as e:
-                pass
-        pdf.ln(2)
-        # Playlists
-        pdf.set_font("Arial", "I", 11)
-        pdf.cell(0, 8, "Playlists:", ln=True)
-        pdf.set_font("Arial", "", 10)
-        for plist in res["playlists"]:
-            line = f"- {plist['name']} (#{plist.get('position', '-')}, {plist['platform'].capitalize()}) | Followers: {plist.get('followers', 'N/A')} | Owner: {plist.get('owner', 'N/A')}"
-            if plist.get("description"):
-                line += f" | {plist['description']}"
-            pdf.multi_cell(0, 7, line)
-        pdf.ln(4)
-
-    filename = f"playlist_scan_{query}.pdf"
-    pdf.output(filename)
-    with open(filename, "rb") as f:
-        st.download_button("⬇️ Download PDF", f, file_name=filename, mime="application/pdf")
