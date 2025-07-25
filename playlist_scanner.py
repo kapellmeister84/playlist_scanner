@@ -9,11 +9,11 @@ import base64
 import asyncio
 from pathlib import Path
 from playwright.async_api import async_playwright
-
-# --- Playwright installation check ---
+from fpdf import FPDF
+from PIL import Image
+from io import BytesIO
+from collections import defaultdict
 import os
-import subprocess
-import shutil
 
 def ensure_playwright_installed():
     if not shutil.which("playwright"):
@@ -470,7 +470,11 @@ if st.session_state.logged_in:
             song_title = sample_song.get("name", "").strip()
             summary_text = f"{song_title} is placed in {playlist_count} playlists."
         st.markdown(f"<div class='custom-summary'>{summary_text}</div>", unsafe_allow_html=True)
-        
+
+        # PDF Export Button
+        if st.button("📄 PDF erstellen"):
+            generate_pdf_streamlit(results, search_term, spotify_token)
+
         for res in results.values():
             track = res["track"]
             track_name = track['name']
@@ -532,5 +536,81 @@ if st.session_state.logged_in:
                 st.markdown(playlist_html, unsafe_allow_html=True)
     else:
         st.warning(f"I'm sorry, {search_term} couldn't be found. 😔")
-else:
-    st.warning("Please log in to use the scanner.")
+
+# --- PDF Generation Function ---
+def generate_pdf_streamlit(results, query, token):
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"Playlist Scan Report: {query}", ln=True, align="C")
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 10, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True)
+    pdf.ln(5)
+
+    # Summary
+    song_count = len(results)
+    playlists = set()
+    total_listings = 0
+    for res in results.values():
+        for plist in res["playlists"]:
+            playlists.add(plist["name"])
+            total_listings += 1
+    playlist_count = len(playlists)
+    summary = f"Songs found: {song_count}\nPlaylists: {playlist_count}\nTotal listings: {total_listings}"
+    pdf.multi_cell(0, 10, summary)
+    pdf.ln(5)
+
+    for res in results.values():
+        track = res["track"]
+        track_name = track.get("name", "Unknown")
+        artist_names = ", ".join([a.get("name", "Unknown") for a in track.get("artists", [])])
+        release_date = track.get("release_date", "")
+        streams = track.get("streams")
+        popularity = track.get("popularity")
+        cover_url = track.get("cover_url") or (track.get("album", {}).get("images", [{}])[0].get("url") if track.get("album", {}).get("images") else None)
+        # Track Header
+        pdf.set_font("Arial", "B", 13)
+        pdf.cell(0, 10, f"{track_name} – {artist_names}", ln=True)
+        pdf.set_font("Arial", "", 11)
+        details = []
+        if release_date:
+            details.append(f"Released: {release_date}")
+        if popularity is not None:
+            details.append(f"Popularity: {popularity}")
+        if streams is not None:
+            details.append(f"Streams: {format_number(streams)}")
+        if details:
+            pdf.multi_cell(0, 8, " | ".join(details))
+        # Cover
+        if cover_url:
+            try:
+                response = requests.get(cover_url)
+                img = Image.open(BytesIO(response.content)).convert("RGB")
+                img.thumbnail((80, 80))
+                img_io = BytesIO()
+                img.save(img_io, format="JPEG")
+                img_io.seek(0)
+                img_path = f"tmp_cover_{hashlib.md5(cover_url.encode()).hexdigest()}.jpg"
+                with open(img_path, "wb") as f:
+                    f.write(img_io.read())
+                pdf.image(img_path, w=30)
+                os.remove(img_path)
+            except Exception as e:
+                pass
+        pdf.ln(2)
+        # Playlists
+        pdf.set_font("Arial", "I", 11)
+        pdf.cell(0, 8, "Playlists:", ln=True)
+        pdf.set_font("Arial", "", 10)
+        for plist in res["playlists"]:
+            line = f"- {plist['name']} (#{plist.get('position', '-')}, {plist['platform'].capitalize()}) | Followers: {plist.get('followers', 'N/A')} | Owner: {plist.get('owner', 'N/A')}"
+            if plist.get("description"):
+                line += f" | {plist['description']}"
+            pdf.multi_cell(0, 7, line)
+        pdf.ln(4)
+
+    filename = f"playlist_scan_{query}.pdf"
+    pdf.output(filename)
+    with open(filename, "rb") as f:
+        st.download_button("⬇️ Download PDF", f, file_name=filename, mime="application/pdf")
