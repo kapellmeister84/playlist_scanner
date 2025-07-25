@@ -322,7 +322,7 @@ def generate_pdf_streamlit(results, query, token):
             return ""
         # Remove all HTML tags
         text = re.sub(r"<[^>]+>", "", text)
-        return text.encode("latin-1", "replace").decode("latin-1")
+        return text.encode("latin-1", "ignore").decode("latin-1")
 
     # --- PDF setup ---
     pdf = FPDF()
@@ -437,7 +437,7 @@ def generate_pdf_streamlit(results, query, token):
             pdf.set_font("Arial", "", 11)
             pdf.multi_cell(0, 7, safe_text(desc))
         if url:
-            pdf.set_text_color(0, 0, 255)
+            pdf.set_text_color(29, 185, 84)
             # Show only the URL as text, or as clickable
             pdf.cell(0, 8, safe_text(url), ln=True, link=url)
             pdf.set_text_color(255, 255, 255)
@@ -648,9 +648,8 @@ if st.session_state.logged_in:
             summary_text = f"{song_title} is placed in {playlist_count} playlists."
         st.markdown(f"<div class='custom-summary'>{summary_text}</div>", unsafe_allow_html=True)
 
-        # PDF Export Button
-        if st.button("📄 PDF erstellen"):
-            generate_pdf_streamlit(results, search_term, spotify_token)
+        # PDF Export: Always show after results
+        generate_pdf_streamlit(results, search_term, spotify_token)
 
         for res in results.values():
             track = res["track"]
