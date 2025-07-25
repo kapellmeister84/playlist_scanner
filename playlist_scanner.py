@@ -373,18 +373,20 @@ def generate_pdf_streamlit(results, query, token):
         try:
             response = requests.get(cover_url)
             img = Image.open(BytesIO(response.content)).convert("RGB")
-            img.thumbnail((120, 120), Image.ANTIALIAS)
+            img.thumbnail((200, 200), Image.LANCZOS)
             img_io = BytesIO()
             img.save(img_io, format="JPEG", quality=100)
             img_io.seek(0)
             img_path = f"tmp_cover_{hashlib.md5(cover_url.encode()).hexdigest()}.jpg"
             with open(img_path, "wb") as f:
                 f.write(img_io.read())
-            pdf.image(img_path, x=pdf.get_x(), y=pdf.get_y(), w=30)
+            pdf.ln(5)
+            # Center the image horizontally, width 60mm
+            pdf.image(img_path, x=(210-60)//2, y=pdf.get_y(), w=60)
             os.remove(img_path)
+            pdf.ln(65)
         except Exception:
             pass
-        pdf.ln(35)
 
     # Zusammenfassung
     playlists = set()
@@ -401,9 +403,14 @@ def generate_pdf_streamlit(results, query, token):
 
     # --- Playlists Section ---
     playlist_entries = []
+    # Remove duplicate playlist links by (playlist name, url)
+    seen_playlists = set()
     for res in results.values():
         for plist in res["playlists"]:
-            playlist_entries.append((res, plist))
+            pl_key = (plist.get("name", ""), plist.get("url", ""))
+            if pl_key not in seen_playlists:
+                playlist_entries.append((res, plist))
+                seen_playlists.add(pl_key)
 
     ENTRIES_PER_PAGE = 3
     for idx, (res, plist) in enumerate(playlist_entries):
@@ -440,7 +447,7 @@ def generate_pdf_streamlit(results, query, token):
             try:
                 response = requests.get(cover)
                 img = Image.open(BytesIO(response.content)).convert("RGB")
-                img.thumbnail((120, 120), Image.ANTIALIAS)
+                img.thumbnail((200, 200), Image.LANCZOS)
                 img_io = BytesIO()
                 img.save(img_io, format="JPEG", quality=100)
                 img_io.seek(0)
@@ -448,7 +455,8 @@ def generate_pdf_streamlit(results, query, token):
                 with open(img_path, "wb") as f:
                     f.write(img_io.read())
                 y = pdf.get_y()
-                pdf.image(img_path, x=170, y=y - 30, w=25)
+                # Place at right margin, slightly higher (y - 25), w=30
+                pdf.image(img_path, x=170, y=y - 25, w=30)
                 os.remove(img_path)
             except Exception:
                 pass
