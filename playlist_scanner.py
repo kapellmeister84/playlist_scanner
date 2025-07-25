@@ -503,7 +503,7 @@ def generate_pdf_streamlit(results, query, token, show_download_button=True):
     if show_download_button:
         with open(output_filename, "rb") as f:
             st.download_button(
-                label="⬇️ Download as PDF",
+                label="⬇️ PDF herunterladen",
                 data=f,
                 file_name=output_filename,
                 mime="application/pdf",
@@ -777,13 +777,13 @@ if st.session_state.logged_in:
             try:
                 with open(output_filename, "rb") as f:
                     st.sidebar.download_button(
-                        label="⬇️ PDF herunterladen",
+                        label="⬇️ Download as PDF",
                         data=f,
                         file_name=output_filename,
                         mime="application/pdf",
                         key="sidebar_pdf_download"
                     )
             except Exception:
-                st.sidebar.markdown("⬇️ PDF wird vorbereitet...")
+                st.sidebar.markdown("⬇️ PDF is being created...")
         else:
-            st.sidebar.markdown("📄 PDF wird im Hintergrund erstellt...")
+            st.sidebar.markdown("📄 PDF is being created in the background...")
