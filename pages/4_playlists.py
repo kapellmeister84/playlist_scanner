@@ -1,6 +1,21 @@
 import streamlit as st
 import json
 import requests
+import asyncio
+import shutil
+import subprocess
+from playwright.async_api import async_playwright
+
+def ensure_playwright_installed():
+    if not shutil.which("playwright"):
+        st.error("Playwright ist nicht installiert.")
+        return
+    try:
+        subprocess.run(["playwright", "install", "chromium"], check=True)
+    except Exception as e:
+        st.error(f"Fehler bei playwright install: {e}")
+
+ensure_playwright_installed()
 
 PLAYLISTS_FILE = "playlists.json"
 
@@ -44,7 +59,6 @@ def get_deezer_playlist_data(playlist_id):
         "url": f"https://www.deezer.com/playlist/{playlist_id}"
     }
 
-# Optional: Token-Ladefunktion (aus anderer Datei importieren, falls modular)
 from pathlib import Path
 
 def load_token():
@@ -52,35 +66,62 @@ def load_token():
     token_path.parent.mkdir(parents=True, exist_ok=True)
     return token_path.read_text(encoding="utf-8").strip() if token_path.exists() else None
 
-# Page setup
+def save_token(token):
+    token_path = Path(".secrets") / ".token.txt"
+    token_path.write_text(token, encoding="utf-8")
+
+def is_token_valid(token):
+    url = "https://api.spotify.com/v1/playlists/37i9dQZF1DX4JAvHpjipBk"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        return requests.get(url, headers=headers).status_code == 200
+    except:
+        return False
+
+async def get_new_token():
+    token = None
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context()
+
+        async def handle_request(request):
+            nonlocal token
+            auth = request.headers.get("authorization")
+            if auth and auth.startswith("Bearer "):
+                token = auth.split(" ")[1]
+
+        context.on("request", handle_request)
+        page = await context.new_page()
+        await page.goto("https://open.spotify.com/")
+        st.warning("Bitte logge dich im Spotify-Fenster ein und kehre danach zurück.")
+        while not token:
+            await asyncio.sleep(1)
+        await browser.close()
+
+    if token:
+        save_token(token)
+        st.success("Spotify-Token erfolgreich gespeichert.")
+        return token
+    else:
+        st.error("Kein Token gefunden.")
+        return None
+
+def ensure_token():
+    token = load_token()
+    if not token or not is_token_valid(token):
+        token = asyncio.run(get_new_token())
+        st.info("⚠️ Token wurde geladen und wird zwischengespeichert in '.secrets/.token.txt'")
+    return token
+
 st.set_page_config(page_title="Getrackte Playlists", layout="wide")
 st.title("📋 Übersicht aller getrackten Playlists")
 st.markdown("Diese Seite zeigt alle Playlists aus der `playlists.json`, geordnet nach Spotify und Deezer.")
 
-token = load_token()
-if token and len(token) < 50:
-    st.warning("A Spotify token was found, but it seems too short. It might be expired or invalid.")
-
-# Optional: Check if token is valid by making a dummy request to Spotify API
-token_valid = True
-if token:
-    try:
-        resp = requests.get("https://api.spotify.com/v1/me", headers={"Authorization": f"Bearer {token}"})
-        if resp.status_code != 200:
-            st.warning(f"Spotify Token scheint ungültig oder abgelaufen (Status {resp.status_code})")
-            st.text(f"Token: {token[:20]}...")
-            st.text(f"Response: {resp.text}")
-            token_valid = False
-            st.stop()
-    except Exception as e:
-        st.warning(f"Fehler beim Testen des Spotify Tokens: {e}")
-        token_valid = False
-        st.stop()
-
+token = ensure_token()
 if not token:
-    st.warning("Kein Spotify Token gefunden. Bitte im Hauptbereich einloggen, um Spotify-Daten zu laden.")
-elif token_valid:
-    st.info("Spotify-Token gefunden, versuche Playlists zu laden...")
+    st.warning("Kein gültiger Spotify Token vorhanden – Zugriff wird nicht funktionieren.")
+else:
+    st.info("Spotify-Token wurde geladen, versuche Playlists zu laden...")
 
 playlists = load_playlists()
 
