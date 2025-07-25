@@ -115,6 +115,46 @@ def ensure_token():
 
 st.set_page_config(page_title="Getrackte Playlists", layout="wide")
 st.title("📋 Übersicht aller getrackten Playlists")
+
+# Add a Playlist Link form
+st.markdown("#### Add a Playlist Link")
+with st.form("add_playlist_form"):
+    new_link = st.text_input("Paste a Spotify or Deezer playlist link here")
+    submit_new_link = st.form_submit_button("➕ Add Playlist")
+
+if submit_new_link and new_link:
+    try:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(new_link)
+        path_parts = parsed.path.strip("/").split("/")
+
+        if "spotify.com" in parsed.netloc and len(path_parts) >= 2 and path_parts[0] == "playlist":
+            new_id = path_parts[1]
+            playlists = load_playlists()
+            if new_id not in playlists["spotify"]:
+                playlists["spotify"][new_id] = "Unnamed Playlist"
+                with open(PLAYLISTS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(playlists, f, indent=2, ensure_ascii=False)
+                st.success("Spotify playlist added.")
+            else:
+                st.info("This Spotify playlist is already tracked.")
+
+        elif "deezer.com" in parsed.netloc and len(path_parts) >= 2 and path_parts[0] == "playlist":
+            new_id = path_parts[1]
+            playlists = load_playlists()
+            if new_id not in playlists["deezer"]:
+                playlists["deezer"][new_id] = "Unnamed Playlist"
+                with open(PLAYLISTS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(playlists, f, indent=2, ensure_ascii=False)
+                st.success("Deezer playlist added.")
+            else:
+                st.info("This Deezer playlist is already tracked.")
+        else:
+            st.error("Invalid playlist link.")
+    except Exception as e:
+        st.error(f"Error processing link: {e}")
+
 st.markdown("Diese Seite zeigt alle Playlists aus der `playlists.json`, geordnet nach Spotify und Deezer.")
 
 token = ensure_token()
