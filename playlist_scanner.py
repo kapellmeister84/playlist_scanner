@@ -571,7 +571,7 @@ if st.session_state.logged_in:
     # Only scan if submit is clicked: clear old results and rerun to refresh
     if submit:
         st.session_state.pop("scan_results", None)
-        st.experimental_rerun()
+        st.session_state.search_triggered = True
         results = {}
         total_listings = 0
         unique_playlists = set()
@@ -670,6 +670,11 @@ if st.session_state.logged_in:
 
         # Remove: Call PDF generation automatically if results exist
         # PDF generation will be done after rendering results
+
+    # Insert rerun logic after submit triggers rerun
+    if st.session_state.get("search_triggered"):
+        st.session_state.search_triggered = False
+        st.rerun()
 
     # Display results and PDF only if scan_results exist in session_state
     if "scan_results" in st.session_state:
