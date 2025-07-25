@@ -348,24 +348,29 @@ def generate_pdf_streamlit(results, query, token):
     add_page_with_bg()
 
     # --- Title Section ---
-    pdf.set_font("Arial", "B", 22)
-    pdf.set_text_color(*SPOTIFY_GREEN)
-    pdf.cell(0, 15, safe_text(f"Playlist-Scan: {query}"), ln=True, align="C")
-    pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Arial", "", 14)
-    pdf.cell(0, 10, safe_text(f"Erstellt am: {datetime.now().strftime('%d.%m.%Y – %H:%M:%S')}"), ln=True, align="C")
-    pdf.ln(10)
-
-    # Haupttitel (Song/Artist)
     first_key = next(iter(results))
     track = results[first_key]["track"]
     track_name = track.get("name", "Unbekannt")
     artist_names = ", ".join([a.get("name", "Unbekannt") for a in track.get("artists", [])])
-    pdf.set_font("Arial", "B", 20)
+    pdf.set_font("Arial", "B", 22)
+    pdf.set_text_color(*SPOTIFY_GREEN)
+    pdf.cell(0, 15, safe_text(f"{track_name} by {artist_names}"), ln=True, align="C")
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 12, safe_text(f"{track_name} by {artist_names}"), ln=True, align="C")
-    pdf.set_text_color(255, 255, 255)
-    pdf.ln(5)
+    pdf.set_font("Arial", "", 14)
+    pdf.cell(0, 10, safe_text(f"Erstellt am: {datetime.now().strftime('%d.%m.%Y – %H:%M:%S')}"), ln=True, align="C")
+    # --- Track-Metadaten ---
+    pdf.set_font("Arial", "", 12)
+    details = []
+    if track.get("release_date"):
+        details.append(f"Released: {track['release_date']}")
+    if track.get("popularity") is not None:
+        details.append(f"Popularity: {track['popularity']}")
+    if track.get("streams") is not None:
+        details.append(f"Streams: {format_number(track['streams'])}")
+    if details:
+        pdf.ln(5)
+        pdf.multi_cell(0, 8, " | ".join(details), align="C")
+    pdf.ln(10)
 
     # Coverbild
     cover_url = track.get("cover_url")
