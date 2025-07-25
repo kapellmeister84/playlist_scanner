@@ -363,7 +363,7 @@ def generate_pdf_streamlit(results, query, token):
     artist_names = ", ".join([a.get("name", "Unbekannt") for a in track.get("artists", [])])
     pdf.set_font("Arial", "B", 16)
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 10, safe_text(f"{track_name} – {artist_names}"), ln=True)
+    pdf.cell(0, 10, safe_text(f"{track_name} by {artist_names}"), ln=True)
     pdf.set_text_color(255, 255, 255)
     pdf.ln(5)
 
