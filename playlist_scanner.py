@@ -350,8 +350,8 @@ def generate_pdf_streamlit(results, query, token):
     # --- Title Section ---
     pdf.set_font("Arial", "B", 22)
     pdf.set_text_color(*SPOTIFY_GREEN)
-    pdf.cell(0, 15, safe_text(f"🎧 Playlist-Scan: {query}"), ln=True, align="C")
-    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 15, safe_text(f"Playlist-Scan: {query}"), ln=True, align="C")
+    pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", "", 14)
     pdf.cell(0, 10, safe_text(f"Erstellt am: {datetime.now().strftime('%d.%m.%Y – %H:%M:%S')}"), ln=True, align="C")
     pdf.ln(10)
@@ -362,9 +362,9 @@ def generate_pdf_streamlit(results, query, token):
     track_name = track.get("name", "Unbekannt")
     artist_names = ", ".join([a.get("name", "Unbekannt") for a in track.get("artists", [])])
     pdf.set_font("Arial", "B", 16)
-    pdf.set_text_color(40, 40, 40)
-    pdf.cell(0, 10, safe_text(f"📀 {track_name} – {artist_names}"), ln=True)
-    pdf.set_text_color(0, 0, 0)
+    pdf.set_text_color(255, 255, 255)
+    pdf.cell(0, 10, safe_text(f"{track_name} – {artist_names}"), ln=True)
+    pdf.set_text_color(255, 255, 255)
     pdf.ln(5)
 
     # Coverbild
@@ -393,8 +393,9 @@ def generate_pdf_streamlit(results, query, token):
         for plist in res["playlists"]:
             playlists.add(plist["name"])
             total_listings += 1
-    summary = f"📋 Der gesuchte Track wurde in {len(playlists)} Playlist(s) gefunden. Insgesamt {total_listings} Platzierungen."
+    summary = f"Zusammenfassung: Der gesuchte Track wurde in {len(playlists)} Playlist(s) gefunden. Insgesamt {total_listings} Platzierungen."
     pdf.set_font("Arial", "", 13)
+    pdf.set_text_color(255, 255, 255)
     pdf.multi_cell(0, 8, safe_text(summary))
     pdf.ln(5)
 
@@ -421,8 +422,8 @@ def generate_pdf_streamlit(results, query, token):
         pdf.set_fill_color(*SPOTIFY_GREEN)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font("Arial", "B", 13)
-        pdf.cell(0, 10, safe_text(f"📄 {name}"), ln=True, fill=True)
-        pdf.set_text_color(0, 0, 0)
+        pdf.cell(0, 10, safe_text(f"Playlist: {name}"), ln=True, fill=True)
+        pdf.set_text_color(255, 255, 255)
         pdf.set_font("Arial", "", 12)
         pdf.cell(0, 8, safe_text(f"Kurator: {owner} – Follower: {followers} – Position: {position}"), ln=True)
         if desc:
@@ -432,7 +433,7 @@ def generate_pdf_streamlit(results, query, token):
             pdf.set_text_color(0, 0, 255)
             # Show only the URL as text, or as clickable
             pdf.cell(0, 8, safe_text(url), ln=True, link=url)
-            pdf.set_text_color(0, 0, 0)
+            pdf.set_text_color(255, 255, 255)
 
         # Playlist-Coverbild
         if cover:
