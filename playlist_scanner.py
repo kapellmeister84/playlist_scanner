@@ -436,6 +436,18 @@ def generate_pdf_streamlit(results, query, token):
             pdf.line(pdf.l_margin, pdf.get_y(), 210 - pdf.r_margin, pdf.get_y())
             pdf.ln(4)
 
+    # --- PDF Download Button for Streamlit ---
+    output_filename = f"playlist_scan_{query.replace(' ', '_')}.pdf"
+    pdf.output(output_filename)
+
+    with open(output_filename, "rb") as f:
+        st.download_button(
+            label="⬇️ PDF herunterladen",
+            data=f,
+            file_name=output_filename,
+            mime="application/pdf"
+        )
+
 PLAYLISTS_FILE = "playlists.json"
 
 def load_playlists():
