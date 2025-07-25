@@ -1,6 +1,7 @@
 """
 playlist scanner
 """
+
 import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
@@ -8,6 +9,22 @@ import base64
 import asyncio
 from pathlib import Path
 from playwright.async_api import async_playwright
+
+# --- Playwright installation check ---
+import os
+import subprocess
+import shutil
+
+def ensure_playwright_installed():
+    if not shutil.which("playwright"):
+        st.error("Playwright ist nicht installiert.")
+        return
+    try:
+        subprocess.run(["playwright", "install", "chromium"], check=True)
+    except Exception as e:
+        st.error(f"Fehler bei playwright install: {e}")
+
+ensure_playwright_installed()
 
 
 # Accessing secrets (Notion token, Database ID, etc.)
@@ -40,7 +57,7 @@ def is_token_valid(token):
 async def get_new_token():
     token = None
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
+        browser = await p.chromium.launch(headless=True)
         context = await browser.new_context()
 
         async def handle_request(request):
