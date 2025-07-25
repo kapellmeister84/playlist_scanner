@@ -510,7 +510,7 @@ def generate_pdf_streamlit(results, query, token, show_download_button=True):
                 key=f"download_button_{output_filename}_{datetime.now().timestamp()}"
             )
 
-PLAYLISTS_FILE = "playlists.json"
+PLAYLISTS_FILE = ".secrets/playlists.json"
 
 def load_playlists():
     try:
