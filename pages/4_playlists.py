@@ -17,7 +17,7 @@ def ensure_playwright_installed():
 
 ensure_playwright_installed()
 
-PLAYLISTS_FILE = ".secrets/playlists.json"
+PLAYLISTS_FILE = "data/playlists.json"
 
 def load_playlists():
     try:
