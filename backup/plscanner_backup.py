@@ -1,10 +1,33 @@
 """
 playlist scanner
 """
+
 import streamlit as st
 import requests, json, time, hashlib
 from datetime import datetime
 import base64
+import asyncio
+from pathlib import Path
+from playwright.async_api import async_playwright
+from fpdf import FPDF
+from PIL import Image
+from io import BytesIO
+from collections import defaultdict
+import os
+import shutil
+import subprocess
+
+def ensure_playwright_installed():
+    if not shutil.which("playwright"):
+        st.error("Playwright ist nicht installiert.")
+        return
+    try:
+        subprocess.run(["playwright", "install", "chromium"], check=True)
+    except Exception as e:
+        st.error(f"Fehler bei playwright install: {e}")
+
+ensure_playwright_installed()
+
 
 # Accessing secrets (Notion token, Database ID, etc.)
 NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
@@ -12,6 +35,62 @@ DATABASE_ID = st.secrets["DATABASE_ID"]
 NOTION_VERSION = st.secrets["NOTION_VERSION"] if "NOTION_VERSION" in st.secrets else "2022-06-28"
 CLIENT_ID = st.secrets["CLIENT_ID"]
 CLIENT_SECRET = st.secrets["CLIENT_SECRET"]
+
+
+# --- Token handling ---
+TOKEN_FILE = "token.txt"
+TOKEN_PATH = Path(TOKEN_FILE)
+
+def load_token():
+    if TOKEN_PATH.exists():
+        return TOKEN_PATH.read_text().strip()
+    return None
+
+def save_token(token):
+    TOKEN_PATH.write_text(token)
+
+def is_token_valid(token):
+    url = "https://api.spotify.com/v1/playlists/37i9dQZF1DX4JAvHpjipBk"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        return requests.get(url, headers=headers).status_code == 200
+    except:
+        return False
+
+async def get_new_token():
+    token = None
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context()
+
+        async def handle_request(request):
+            nonlocal token
+            auth = request.headers.get("authorization")
+            if auth and auth.startswith("Bearer "):
+                token = auth.split(" ")[1]
+
+        context.on("request", handle_request)
+        page = await context.new_page()
+        await page.goto("https://open.spotify.com/")
+        st.warning("Bitte logge dich im Spotify-Fenster ein und kehre danach zurück.")
+        while not token:
+            await asyncio.sleep(1)
+        await browser.close()
+
+    if token:
+        save_token(token)
+        st.success("Spotify-Token erfolgreich gespeichert.")
+        return token
+    else:
+        st.error("Kein Token gefunden.")
+        return None
+
+def ensure_token():
+    token = load_token()
+    if not token or not is_token_valid(token):
+        token = asyncio.run(get_new_token())
+        st.info("⚠️ Token wurde geladen und wird zwischengespeichert in 'token.txt'")
+    return token
 
 
 
@@ -144,23 +223,7 @@ def format_number(n):
     return format(n, ",").replace(",", ".")
 
 def get_spotify_token():
-    auth_string = f"{CLIENT_ID}:{CLIENT_SECRET}"
-    auth_bytes = auth_string.encode("utf-8")
-    auth_base64 = base64.b64encode(auth_bytes).decode("utf-8")
-    
-    url = "https://accounts.spotify.com/api/token"
-    headers = {
-        "Authorization": f"Basic {auth_base64}",
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    data = {"grant_type": "client_credentials"}
-    response = requests.post(url, headers=headers, data=data)
-    try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP Error: {e.response.status_code} - {e.response.text}")
-        raise
-    return response.json()["access_token"]
+    return ensure_token()
 
 def get_playlist_data(playlist_id, token):
     headers = {"Authorization": f"Bearer {token}"}
@@ -193,7 +256,8 @@ def get_track_additional_info(track_id, token):
     data = requests.get(url, headers=headers).json()
     playcount = get_spotify_playcount(track_id, token)
     release_date = data.get("album", {}).get("release_date", "N/A")
-    cover_url = data.get("album", {}).get("images", [{}])[0].get("url", "")
+    images = data.get("album", {}).get("images", [])
+    cover_url = images[0].get("url", "") if images else ""
     return {"playcount": playcount, "release_date": release_date, "cover_url": cover_url}
 
 def find_tracks_by_artist(playlist_id, query, token):
@@ -223,11 +287,26 @@ def normalize_deezer_track(track):
     }]
     cover_url = track.get("album", {}).get("cover")
     normalized["album"] = {"images": [{"url": cover_url}]} if cover_url else {"images": []}
+    # Add cover_url directly
+    normalized["cover_url"] = cover_url
     normalized["streams"] = track.get("rank", 0)
     normalized["popularity"] = 0
     normalized["release_date"] = "N/A"
     normalized["platform"] = "Deezer"
     normalized["id"] = str(track.get("id"))
+    # Fallback: try to get cover from Spotify if cover_url is empty
+    if not normalized["cover_url"]:
+        try:
+            # versuche das Cover via Spotify zu holen
+            search_query = f"{normalized['name']} {normalized['artists'][0]['name']}"
+            headers = {"Authorization": f"Bearer {SPOTIFY_TOKEN}"}
+            search_url = "https://api.spotify.com/v1/search"
+            params = {"q": search_query, "type": "track", "limit": 1}
+            r = requests.get(search_url, headers=headers, params=params)
+            item = r.json().get("tracks", {}).get("items", [])[0]
+            normalized["cover_url"] = item.get("album", {}).get("images", [{}])[0].get("url", "")
+        except Exception:
+            pass
     return normalized
 
 def find_tracks_by_artist_deezer(playlist_id, query):
@@ -246,111 +325,195 @@ def generate_track_key(track):
     artists = sorted([artist.get("name", "").strip().lower() for artist in track.get("artists", [])])
     return f"{track_name} - {'/'.join(artists)}"
 
-# --- Playlist IDs, sortiert nach Genre ---
 
-# Spotify Playlists
+# --- PDF Generation Function ---
+def generate_pdf_streamlit(results, query, token):
+    import hashlib
+    import re
+    from urllib.request import urlopen
+    def safe_text(text):
+        # Remove HTML tags, especially <a ...>@diffusmagazin</a> etc.
+        if not text:
+            return ""
+        # Remove all HTML tags
+        text = re.sub(r"<[^>]+>", "", text)
+        return text.encode("latin-1", "ignore").decode("latin-1")
 
-# Deutschrap
-spotify_playlist_ids_deutschrap = [
-    "37i9dQZF1DWSTqUqJcxFk6",  # Deutschrap Brandneu
-    "37i9dQZF1DX1zpUaiwr15A",  # Deutschrap Untergrund
-    "6oiQozBfDMhbtciv64BDBA",  # UNDERRATED DEUTSCHRAP – Vol. 1
-    "5aZLJKzIh7iiBA64mZBhnw",  # Deutschraps Zukunft
-    "37i9dQZF1DWVldpBFom9q6",  # Deutschrap Klassiker
-]
+    # --- PDF setup ---
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=False, margin=15)  # We'll manage page breaks
+    SPOTIFY_GREEN = (29, 185, 84)
+    BG_IMG_URL = "https://iili.io/3dchREl.jpg"
 
-# Pop / Charts / New Releases
-spotify_playlist_ids_pop = [
-    "37i9dQZF1DX4jP4eebSWR9",  # Hot Hits Deutschland – Top 50 Songs
-    "37i9dQZF1DWUW2bvSkjcJ6",  # New Music Friday Deutschland – 97 Songs
-    "37i9dQZF1DXcBWIGoYBM5M",  # Today’s Top Hits – 50 Songs
-    "37i9dQZF1DX4JAvHpjipBk",  # New Music Friday – 100 Songs
-    "7jLtJrdChX6rXZ39SLVMKD",  # New Music Friday Austria
-    "37i9dQZF1DX3crNbt46mRU",  # New Music Friday Switzerland – 104 Songs
-    "52b9qE2M2uWn9EKYPe6uWK",  # Die beste neue Musik
-    "37i9dQZEVXbNv6cjoMVCyg",  # Viral 50 – Germany
-    "37i9dQZEVXbsQiwUKyCsTG",  # Release Radar
-    "37i9dQZF1DXbKGrOUA30KN",  # POPLAND – 75 Songs
-    "196MX5AEmUbJZaCIXqLJPp",  # Most Dope
-]
+    # Download background image once
+    try:
+        response = urlopen(BG_IMG_URL)
+        bg_img = Image.open(BytesIO(response.read())).convert("RGB")
+        bg_img_path = "background_temp.jpg"
+        bg_img.save(bg_img_path, quality=100)
+    except Exception as e:
+        print(f"Background image error: {e}")
+        bg_img_path = None
 
-# Hip-Hop / Rap (non-deutschrap)
-spotify_playlist_ids_rap = [
-    "531gtG63RwBSjuxb7XDGPL",  # Thank BACKSPIN, it's Friday
-    "37i9dQZF1DX0XUsuxWHRQd",  # RapCaviar – Top 50 Songs
-    "37i9dQZF1DWTBz12MDeCuX",  # me right now – Top 100 Songs
-]
+    def add_page_with_bg():
+        pdf.add_page()
+        if bg_img_path:
+            pdf.image(bg_img_path, x=0, y=0, w=210, h=297)
 
-# Indie / Alternative / New Wave
-spotify_playlist_ids_indie = [
-    "37i9dQZF1DX59oR8I71XgB",  # word!
-    "37i9dQZF1DX36edUJpD76c",  # Modus Mio
-    "37i9dQZF1DX2Nc3B70tvx0",  # Front Page Indie – 113 Songs
-    "5RyrcmTrO52jOnaBkcY9dy",   # NEW WAVE GERMANY
-    "6JMZfOAvKuNGcGAl6nQ4dt",   # NEW NEW WAVE
-    "6Di85VhG9vfyswWHBTEoQN",   # freitag0uhr (Vibe/Alternative)
-    "37i9dQZF1DX7i0DhceX5x9",   # Titel bitte prüfen (Genre unklar, hier als Indie einsortiert)
-]
+    # For each unique track, add a section with its own page(s)
+    for key, data in results.items():
+        track = data["track"]
+        playlists = data["playlists"]
 
-# Party / Sommer / Rock
-spotify_playlist_ids_party = [
-    "37i9dQZF1DX8EJcZl0Y1NR",  # Deutsche Party Hits
-    "37i9dQZF1DX0qedEKhV1ac",  # Deutsche Sommerhits
-    "37i9dQZF1DX3PFzdbtx1Us",  # Deutsche Rock Klassiker
-]
+        add_page_with_bg()
 
-spotify_playlist_ids = (
-    spotify_playlist_ids_deutschrap +
-    spotify_playlist_ids_pop +
-    spotify_playlist_ids_rap +
-    spotify_playlist_ids_indie +
-    spotify_playlist_ids_party
-)
+        # Header: Track name by artist
+        track_name = track.get("name", "Unbekannt")
+        artist_names = ", ".join([a.get("name", "Unbekannt") for a in track.get("artists", [])])
+        pdf.set_font("Arial", "B", 22)
+        pdf.set_text_color(*SPOTIFY_GREEN)
+        pdf.multi_cell(0, 15, safe_text(f"{track_name} by {artist_names}"), align="C")
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("Arial", "", 14)
+        pdf.cell(0, 10, safe_text(f"Erstellt am: {datetime.now().strftime('%d.%m.%Y – %H:%M:%S')}"), ln=True, align="C")
+        # Track-Metadaten
+        pdf.set_font("Arial", "", 12)
+        details = []
+        if track.get("release_date"):
+            details.append(f"Released: {track['release_date']}")
+        if track.get("popularity") is not None:
+            details.append(f"Popularity: {track['popularity']}")
+        if track.get("streams") is not None:
+            details.append(f"Streams: {format_number(track['streams'])}")
+        if details:
+            pdf.ln(5)
+            pdf.multi_cell(0, 8, " | ".join(details), align="C")
+        pdf.ln(10)
 
-# Deezer Playlists
+        # Cover image (centered)
+        cover_url = track.get("cover_url")
+        if cover_url:
+            try:
+                response = requests.get(cover_url)
+                img = Image.open(BytesIO(response.content)).convert("RGB")
+                img.thumbnail((200, 200), Image.LANCZOS)
+                img_io = BytesIO()
+                img.save(img_io, format="JPEG", quality=100)
+                img_io.seek(0)
+                img_path = f"tmp_cover_{hashlib.md5(cover_url.encode()).hexdigest()}.jpg"
+                with open(img_path, "wb") as f:
+                    f.write(img_io.read())
+                pdf.ln(5)
+                # Center the image horizontally, width 60mm
+                pdf.image(img_path, x=(210-60)//2, y=pdf.get_y(), w=60)
+                os.remove(img_path)
+                pdf.ln(65)
+            except Exception:
+                pass
+        else:
+            pdf.ln(10)
 
-# Persönliche Empfehlungen / Flow
-deezer_flow = [
-    "1111143121",  # Deezer Flow
-]
+        # Playlists summary for this track
+        playlist_names = set()
+        for plist in playlists:
+            playlist_names.add(plist["name"])
+        summary = f"Der Track wurde in {len(playlist_names)} Playlist(s) gefunden. Insgesamt {len(playlists)} Platzierungen."
+        pdf.set_font("Arial", "", 13)
+        pdf.set_text_color(255, 255, 255)
+        pdf.multi_cell(0, 8, safe_text(summary))
+        pdf.ln(5)
 
-# Top-Hits / Charts
-deezer_hits = [
-    "1043463931",  # Top Hits Deutschland
-    "4524622884",  # Today's Best
-]
+        # --- Playlists Section (for this track only) ---
+        playlist_entries = []
+        seen_playlists = set()
+        for plist in playlists:
+            pl_key = (plist.get("name", ""), plist.get("url", ""))
+            if pl_key not in seen_playlists:
+                playlist_entries.append(plist)
+                seen_playlists.add(pl_key)
 
-# Neue Musik / Empfehlungen
-deezer_new = [
-    "146820791",   # Fresh Finds
-    "1257540851",  # Deezer Recommends
-]
+        ENTRIES_PER_PAGE = 3
+        for idx, plist in enumerate(playlist_entries):
+            # Add new page (with bg) every ENTRIES_PER_PAGE (except first page)
+            if idx > 0 and idx % ENTRIES_PER_PAGE == 0:
+                add_page_with_bg()
+            # Section heading
+            name = plist.get("name", "Unknown Playlist")
+            owner = plist.get("owner", "N/A")
+            followers = plist.get("followers", "N/A")
+            position = plist.get("position", "-")
+            url = plist.get("url", "")
+            desc = plist.get("description", "")
+            cover = plist.get("cover")
 
-# Urban / Hip-Hop Vibes
-deezer_urban = [
-    "8668716682",  # Urban Vibes
-]
+            pdf.set_fill_color(*SPOTIFY_GREEN)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font("Arial", "B", 13)
+            pdf.cell(0, 10, safe_text(f"Playlist: {name}"), ln=True, fill=True)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font("Arial", "", 12)
+            pdf.cell(0, 8, safe_text(f"Kurator: {owner} – Follower: {followers} – Position: {position}"), ln=True)
+            if desc:
+                pdf.set_font("Arial", "", 11)
+                pdf.multi_cell(0, 7, safe_text(desc))
+            if url:
+                pdf.set_text_color(29, 185, 84)
+                pdf.cell(0, 8, safe_text(url), ln=True, link=url)
+                pdf.set_text_color(255, 255, 255)
 
-# Klassiker
-deezer_classics = [
-    "65490170",    # Old School Classics
-]
+            # Playlist cover image
+            if cover:
+                try:
+                    response = requests.get(cover)
+                    img = Image.open(BytesIO(response.content)).convert("RGB")
+                    img.thumbnail((200, 200), Image.LANCZOS)
+                    img_io = BytesIO()
+                    img.save(img_io, format="JPEG", quality=100)
+                    img_io.seek(0)
+                    img_path = f"tmp_{hashlib.md5(cover.encode()).hexdigest()}.jpg"
+                    with open(img_path, "wb") as f:
+                        f.write(img_io.read())
+                    y = pdf.get_y()
+                    pdf.image(img_path, x=170, y=y - 25, w=30)
+                    os.remove(img_path)
+                except Exception:
+                    pass
 
-# Party
-deezer_party = [
-    "785141981",   # Party Hits
-]
+            # Layout improvements: add spacing and section divider
+            pdf.ln(6)
+            pdf.set_draw_color(*SPOTIFY_GREEN)
+            pdf.set_line_width(0.8)
+            pdf.line(pdf.l_margin, pdf.get_y(), 210 - pdf.r_margin, pdf.get_y())
+            pdf.ln(4)
 
-deezer_playlist_ids = (
-    deezer_flow +
-    deezer_hits +
-    deezer_new +
-    deezer_urban +
-    deezer_classics +
-    deezer_party
-)
+    # Clean up temp bg image
+    if bg_img_path and os.path.exists(bg_img_path):
+        os.remove(bg_img_path)
 
-all_playlists = [(pid, "spotify") for pid in spotify_playlist_ids] + [(pid, "deezer") for pid in deezer_playlist_ids]
+    # --- PDF Download Button for Streamlit ---
+    output_filename = f"playlist_scan_{query.replace(' ', '_')}.pdf"
+    pdf.output(output_filename)
+
+    with open(output_filename, "rb") as f:
+        st.download_button(
+            label="⬇️ PDF herunterladen",
+            data=f,
+            file_name=output_filename,
+            mime="application/pdf"
+        )
+
+PLAYLISTS_FILE = "playlists.json"
+
+def load_playlists():
+    try:
+        with open(PLAYLISTS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return [(pid, "spotify") for pid in data.get("spotify", {})] + [(pid, "deezer") for pid in data.get("deezer", {})]
+    except Exception as e:
+        st.error(f"Fehler beim Laden der Playlisten: {e}")
+        return []
+
+all_playlists = load_playlists()
 
 def update_progress_bar(current, total):
     percentage = int((current / total) * 100)
@@ -400,38 +563,64 @@ if st.session_state.logged_in:
     unique_playlists = set()
     total_playlists = len(all_playlists)
     
-    for i, (pid, platform) in enumerate(all_playlists, start=1):
+    import concurrent.futures
+
+    def scan_playlist_wrapper(args):
+        pid, platform, token, search_term = args
         if platform == "spotify":
-            playlist = get_playlist_data(pid, spotify_token)
+            playlist = get_playlist_data(pid, token)
             if not playlist:
-                update_progress_bar(i, total_playlists)
-                continue
+                return None
             playlist_name = playlist.get("name", "Unknown Playlist")
             playlist_followers = playlist.get("followers", {}).get("total", "N/A")
             if isinstance(playlist_followers, int):
                 playlist_followers = format_number(playlist_followers)
             playlist_owner = playlist.get("owner", {}).get("display_name", "N/A")
             playlist_description = playlist.get("description", "")
-            status_message.info(f"Scanning for '{search_term}' in '{playlist_name}'")
-            tracks = find_tracks_by_artist(pid, search_term, spotify_token)
+            tracks = find_tracks_by_artist(pid, search_term, token)
             cover = playlist.get("images", [{}])[0].get("url")
             playlist_url = f"https://open.spotify.com/playlist/{pid}"
         else:
             playlist = get_deezer_playlist_data(pid)
             if not playlist:
-                update_progress_bar(i, total_playlists)
-                continue
+                return None
             playlist_name = playlist.get("title", "Unknown Playlist")
             playlist_followers = playlist.get("fans", "N/A")
             if isinstance(playlist_followers, int):
                 playlist_followers = format_number(playlist_followers)
             playlist_owner = playlist.get("user", {}).get("name", "N/A")
             playlist_description = playlist.get("description", "")
-            status_message.info(f"Scanning for '{search_term}' in '{playlist_name}'")
             tracks = find_tracks_by_artist_deezer(pid, search_term)
             cover = playlist.get("picture")
             playlist_url = f"https://www.deezer.com/playlist/{pid}"
-        
+        return {
+            "platform": platform,
+            "playlist_name": playlist_name,
+            "playlist_owner": playlist_owner,
+            "playlist_followers": playlist_followers,
+            "playlist_description": playlist_description,
+            "tracks": tracks,
+            "cover": cover,
+            "url": playlist_url
+        }
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        tasks = [(pid, platform, spotify_token, search_term) for pid, platform in all_playlists]
+        future_results = list(executor.map(scan_playlist_wrapper, tasks))
+
+    for i, result in enumerate(future_results, start=1):
+        if not result:
+            update_progress_bar(i, total_playlists)
+            continue
+        playlist_name = result["playlist_name"]
+        playlist_followers = result["playlist_followers"]
+        playlist_owner = result["playlist_owner"]
+        playlist_description = result["playlist_description"]
+        tracks = result["tracks"]
+        cover = result["cover"]
+        playlist_url = result["url"]
+        platform = result["platform"]
+
         for match in tracks:
             track = match['track']
             position = match['position']
@@ -450,7 +639,7 @@ if st.session_state.logged_in:
                 "owner": playlist_owner,
                 "description": playlist_description
             })
-        
+
         update_progress_bar(i, total_playlists)
         time.sleep(0.1)
     
@@ -476,7 +665,10 @@ if st.session_state.logged_in:
             song_title = sample_song.get("name", "").strip()
             summary_text = f"{song_title} is placed in {playlist_count} playlists."
         st.markdown(f"<div class='custom-summary'>{summary_text}</div>", unsafe_allow_html=True)
-        
+
+        # PDF Export: Always show after results
+        generate_pdf_streamlit(results, search_term, spotify_token)
+
         for res in results.values():
             track = res["track"]
             track_name = track['name']
@@ -538,5 +730,5 @@ if st.session_state.logged_in:
                 st.markdown(playlist_html, unsafe_allow_html=True)
     else:
         st.warning(f"I'm sorry, {search_term} couldn't be found. 😔")
-else:
-    st.warning("Please log in to use the scanner.")
+
+
