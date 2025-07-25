@@ -18,7 +18,7 @@ def get_spotify_playlist_data(playlist_id, token):
     r = requests.get(url, headers=headers)
     if r.status_code != 200:
         st.warning(f"Spotify API Fehler ({r.status_code}) für Playlist ID {playlist_id}")
-        st.text(f"Token: {token[:20]}...")  # show beginning of token for debugging
+        st.text("Token geladen.")  # Token-Details für Debugging ausgeblendet
         st.text(f"Response: {r.text}")
         return None
     data = r.json()
@@ -46,9 +46,11 @@ def get_deezer_playlist_data(playlist_id):
 
 # Optional: Token-Ladefunktion (aus anderer Datei importieren, falls modular)
 from pathlib import Path
+
 def load_token():
-    token_file = Path("token.txt")
-    return token_file.read_text(encoding="utf-8").strip() if token_file.exists() else None
+    token_path = Path(".secrets") / ".token.txt"
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    return token_path.read_text(encoding="utf-8").strip() if token_path.exists() else None
 
 # Page setup
 st.set_page_config(page_title="Getrackte Playlists", layout="wide")
