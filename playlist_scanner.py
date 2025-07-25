@@ -505,7 +505,8 @@ def generate_pdf_streamlit(results, query, token):
             label="⬇️ PDF herunterladen",
             data=f,
             file_name=output_filename,
-            mime="application/pdf"
+            mime="application/pdf",
+            key=f"download_button_{output_filename}"
         )
 
 PLAYLISTS_FILE = "playlists.json"
