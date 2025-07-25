@@ -287,11 +287,26 @@ def normalize_deezer_track(track):
     }]
     cover_url = track.get("album", {}).get("cover")
     normalized["album"] = {"images": [{"url": cover_url}]} if cover_url else {"images": []}
+    # Add cover_url directly
+    normalized["cover_url"] = cover_url
     normalized["streams"] = track.get("rank", 0)
     normalized["popularity"] = 0
     normalized["release_date"] = "N/A"
     normalized["platform"] = "Deezer"
     normalized["id"] = str(track.get("id"))
+    # Fallback: try to get cover from Spotify if cover_url is empty
+    if not normalized["cover_url"]:
+        try:
+            # versuche das Cover via Spotify zu holen
+            search_query = f"{normalized['name']} {normalized['artists'][0]['name']}"
+            headers = {"Authorization": f"Bearer {SPOTIFY_TOKEN}"}
+            search_url = "https://api.spotify.com/v1/search"
+            params = {"q": search_query, "type": "track", "limit": 1}
+            r = requests.get(search_url, headers=headers, params=params)
+            item = r.json().get("tracks", {}).get("items", [])[0]
+            normalized["cover_url"] = item.get("album", {}).get("images", [{}])[0].get("url", "")
+        except Exception:
+            pass
     return normalized
 
 def find_tracks_by_artist_deezer(playlist_id, query):
