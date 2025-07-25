@@ -225,17 +225,20 @@ def format_number(n):
 def get_spotify_token():
     return ensure_token()
 
+@st.cache_data
 def get_playlist_data(playlist_id, token):
     headers = {"Authorization": f"Bearer {token}"}
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}"
     response = requests.get(url, headers=headers)
     return response.json()
 
+@st.cache_data
 def get_deezer_playlist_data(playlist_id):
     url = f"https://api.deezer.com/playlist/{playlist_id}"
     response = requests.get(url)
     return response.json()
 
+@st.cache_data
 def get_spotify_playcount(track_id, token):
     variables = json.dumps({"uri": f"spotify:track:{track_id}"})
     extensions = json.dumps({
@@ -250,6 +253,7 @@ def get_spotify_playcount(track_id, token):
     response.raise_for_status()
     return int(response.json()["data"]["trackUnion"].get("playcount", 0))
 
+@st.cache_data
 def get_track_additional_info(track_id, token):
     headers = {"Authorization": f"Bearer {token}"}
     url = f"https://api.spotify.com/v1/tracks/{track_id}"
@@ -260,6 +264,7 @@ def get_track_additional_info(track_id, token):
     cover_url = images[0].get("url", "") if images else ""
     return {"playcount": playcount, "release_date": release_date, "cover_url": cover_url}
 
+@st.cache_data
 def find_tracks_by_artist(playlist_id, query, token):
     query = query.strip()
     headers = {"Authorization": f"Bearer {token}"}
@@ -309,6 +314,7 @@ def normalize_deezer_track(track):
             pass
     return normalized
 
+@st.cache_data
 def find_tracks_by_artist_deezer(playlist_id, query):
     url = f"https://api.deezer.com/playlist/{playlist_id}/tracks"
     params = {"limit": 100}
@@ -551,184 +557,207 @@ if st.session_state.logged_in:
     status_message = st.empty()
     progress_placeholder = st.empty()
     promo_placeholder = st.empty()
-    
+
     # Get Spotify token and headers
     global SPOTIFY_TOKEN, SPOTIFY_HEADERS
     spotify_token = get_spotify_token()
     SPOTIFY_TOKEN = spotify_token
     SPOTIFY_HEADERS = {"Authorization": f"Bearer {spotify_token}"}
-    
-    results = {}
-    total_listings = 0
-    unique_playlists = set()
-    total_playlists = len(all_playlists)
-    
+
     import concurrent.futures
 
-    def scan_playlist_wrapper(args):
-        pid, platform, token, search_term = args
-        if platform == "spotify":
-            playlist = get_playlist_data(pid, token)
-            if not playlist:
-                return None
-            playlist_name = playlist.get("name", "Unknown Playlist")
-            playlist_followers = playlist.get("followers", {}).get("total", "N/A")
-            if isinstance(playlist_followers, int):
-                playlist_followers = format_number(playlist_followers)
-            playlist_owner = playlist.get("owner", {}).get("display_name", "N/A")
-            playlist_description = playlist.get("description", "")
-            tracks = find_tracks_by_artist(pid, search_term, token)
-            cover = playlist.get("images", [{}])[0].get("url")
-            playlist_url = f"https://open.spotify.com/playlist/{pid}"
-        else:
-            playlist = get_deezer_playlist_data(pid)
-            if not playlist:
-                return None
-            playlist_name = playlist.get("title", "Unknown Playlist")
-            playlist_followers = playlist.get("fans", "N/A")
-            if isinstance(playlist_followers, int):
-                playlist_followers = format_number(playlist_followers)
-            playlist_owner = playlist.get("user", {}).get("name", "N/A")
-            playlist_description = playlist.get("description", "")
-            tracks = find_tracks_by_artist_deezer(pid, search_term)
-            cover = playlist.get("picture")
-            playlist_url = f"https://www.deezer.com/playlist/{pid}"
-        return {
-            "platform": platform,
-            "playlist_name": playlist_name,
-            "playlist_owner": playlist_owner,
-            "playlist_followers": playlist_followers,
-            "playlist_description": playlist_description,
-            "tracks": tracks,
-            "cover": cover,
-            "url": playlist_url
+    # Only scan if submit is clicked and results are not in session_state
+    if submit and "scan_results" not in st.session_state:
+        results = {}
+        total_listings = 0
+        unique_playlists = set()
+        total_playlists = len(all_playlists)
+
+        def scan_playlist_wrapper(args):
+            pid, platform, token, search_term = args
+            if platform == "spotify":
+                playlist = get_playlist_data(pid, token)
+                if not playlist:
+                    return None
+                playlist_name = playlist.get("name", "Unknown Playlist")
+                playlist_followers = playlist.get("followers", {}).get("total", "N/A")
+                if isinstance(playlist_followers, int):
+                    playlist_followers = format_number(playlist_followers)
+                playlist_owner = playlist.get("owner", {}).get("display_name", "N/A")
+                playlist_description = playlist.get("description", "")
+                tracks = find_tracks_by_artist(pid, search_term, token)
+                cover = playlist.get("images", [{}])[0].get("url")
+                playlist_url = f"https://open.spotify.com/playlist/{pid}"
+            else:
+                playlist = get_deezer_playlist_data(pid)
+                if not playlist:
+                    return None
+                playlist_name = playlist.get("title", "Unknown Playlist")
+                playlist_followers = playlist.get("fans", "N/A")
+                if isinstance(playlist_followers, int):
+                    playlist_followers = format_number(playlist_followers)
+                playlist_owner = playlist.get("user", {}).get("name", "N/A")
+                playlist_description = playlist.get("description", "")
+                tracks = find_tracks_by_artist_deezer(pid, search_term)
+                cover = playlist.get("picture")
+                playlist_url = f"https://www.deezer.com/playlist/{pid}"
+            return {
+                "platform": platform,
+                "playlist_name": playlist_name,
+                "playlist_owner": playlist_owner,
+                "playlist_followers": playlist_followers,
+                "playlist_description": playlist_description,
+                "tracks": tracks,
+                "cover": cover,
+                "url": playlist_url
+            }
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            tasks = [(pid, platform, spotify_token, search_term) for pid, platform in all_playlists]
+            future_results = list(executor.map(scan_playlist_wrapper, tasks))
+
+        for i, result in enumerate(future_results, start=1):
+            if not result:
+                update_progress_bar(i, len(all_playlists))
+                continue
+            playlist_name = result["playlist_name"]
+            playlist_followers = result["playlist_followers"]
+            playlist_owner = result["playlist_owner"]
+            playlist_description = result["playlist_description"]
+            tracks = result["tracks"]
+            cover = result["cover"]
+            playlist_url = result["url"]
+            platform = result["platform"]
+
+            for match in tracks:
+                track = match['track']
+                position = match['position']
+                total_listings += 1
+                unique_playlists.add(playlist_name)
+                key = generate_track_key(track)
+                if key not in results:
+                    results[key] = {"track": track, "playlists": []}
+                results[key]["playlists"].append({
+                    "name": playlist_name,
+                    "cover": cover,
+                    "url": playlist_url,
+                    "position": position,
+                    "platform": platform,
+                    "followers": playlist_followers,
+                    "owner": playlist_owner,
+                    "description": playlist_description
+                })
+
+            update_progress_bar(i, len(all_playlists))
+            time.sleep(0.1)
+
+        status_message.empty()
+        progress_placeholder.empty()
+        promo_placeholder.empty()
+
+        # Save results to session state
+        st.session_state.scan_results = {
+            "results": results,
+            "search_term": search_term,
+            "spotify_token": spotify_token,
+            "total_listings": total_listings,
+            "unique_playlists": list(unique_playlists)
         }
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        tasks = [(pid, platform, spotify_token, search_term) for pid, platform in all_playlists]
-        future_results = list(executor.map(scan_playlist_wrapper, tasks))
+        # Call PDF generation automatically if results exist
+        if results:
+            generate_pdf_streamlit(results, search_term, spotify_token)
 
-    for i, result in enumerate(future_results, start=1):
-        if not result:
-            update_progress_bar(i, total_playlists)
-            continue
-        playlist_name = result["playlist_name"]
-        playlist_followers = result["playlist_followers"]
-        playlist_owner = result["playlist_owner"]
-        playlist_description = result["playlist_description"]
-        tracks = result["tracks"]
-        cover = result["cover"]
-        playlist_url = result["url"]
-        platform = result["platform"]
-
-        for match in tracks:
-            track = match['track']
-            position = match['position']
-            total_listings += 1
-            unique_playlists.add(playlist_name)
-            key = generate_track_key(track)
-            if key not in results:
-                results[key] = {"track": track, "playlists": []}
-            results[key]["playlists"].append({
-                "name": playlist_name,
-                "cover": cover,
-                "url": playlist_url,
-                "position": position,
-                "platform": platform,
-                "followers": playlist_followers,
-                "owner": playlist_owner,
-                "description": playlist_description
-            })
-
-        update_progress_bar(i, total_playlists)
-        time.sleep(0.1)
-    
-    status_message.empty()
-    progress_placeholder.empty()
-    promo_placeholder.empty()
-    
-    if results:
-        song_count = len(results)
-        playlist_count = len(unique_playlists)
-        artist_name = None
-        for res in results.values():
-            for artist in res.get("track", {}).get("artists", []):
-                if search_term.lower() in artist.get("name", "").lower():
-                    artist_name = artist.get("name")
+    # Display results and PDF only if scan_results exist in session_state
+    if "scan_results" in st.session_state:
+        data = st.session_state.scan_results
+        results = data["results"]
+        search_term = data["search_term"]
+        spotify_token = data["spotify_token"]
+        total_listings = data.get("total_listings", 0)
+        unique_playlists = set(data.get("unique_playlists", []))
+        if results:
+            song_count = len(results)
+            playlist_count = len(unique_playlists)
+            artist_name = None
+            for res in results.values():
+                for artist in res.get("track", {}).get("artists", []):
+                    if search_term.lower() in artist.get("name", "").lower():
+                        artist_name = artist.get("name")
+                        break
+                if artist_name:
                     break
             if artist_name:
-                break
-        if artist_name:
-            summary_text = f"{artist_name} is placed in {playlist_count} playlists, with {song_count} distinct song(s). They have been listed a total of {total_listings} times."
-        else:
-            sample_song = list(results.values())[0]["track"]
-            song_title = sample_song.get("name", "").strip()
-            summary_text = f"{song_title} is placed in {playlist_count} playlists."
-        st.markdown(f"<div class='custom-summary'>{summary_text}</div>", unsafe_allow_html=True)
+                summary_text = f"{artist_name} is placed in {playlist_count} playlists, with {song_count} distinct song(s). They have been listed a total of {total_listings} times."
+            else:
+                sample_song = list(results.values())[0]["track"]
+                song_title = sample_song.get("name", "").strip()
+                summary_text = f"{song_title} is placed in {playlist_count} playlists."
+            st.markdown(f"<div class='custom-summary'>{summary_text}</div>", unsafe_allow_html=True)
 
-        # PDF Export: Always show after results
-        generate_pdf_streamlit(results, search_term, spotify_token)
+            # Generate PDF automatically (no button)
+            generate_pdf_streamlit(results, search_term, spotify_token)
 
-        for res in results.values():
-            track = res["track"]
-            track_name = track['name']
-            clickable_artists = []
-            for artist_obj in track['artists']:
-                a_name = artist_obj.get("name", "Unknown")
-                if track.get("platform", "spotify") == "Deezer" and artist_obj.get("id"):
-                    clickable_artists.append(f"[{a_name}](https://www.deezer.com/artist/{artist_obj['id']})")
-                elif artist_obj.get("id"):
-                    clickable_artists.append(f"[{a_name}](https://open.spotify.com/artist/{artist_obj['id']})")
-                else:
-                    clickable_artists.append(a_name)
-            artists_md = ", ".join(clickable_artists)
-            album_release_date = track.get("release_date", "")
-            album_cover = track.get("cover_url") or (track.get("album", {}).get("images", [{}])[0].get("url") if track.get("album", {}).get("images") else None)
-            extra_info = ""
-            if album_release_date:
-                extra_info += f"Released: {album_release_date}  \n"
-            if track.get("popularity") is not None:
-                extra_info += f"Popularity: {track['popularity']}  \n"
-            if track.get("streams") is not None:
-                extra_info += f"Streams: {format_number(track['streams'])}  \n"
-            st.markdown(f"### 📀 {track_name} – {artists_md}")
-            if extra_info:
-                st.markdown(extra_info)
-            if album_cover:
-                song_url = ""
-                if track.get("id"):
-                    if track.get("platform", "spotify") == "Deezer":
-                        song_url = f"https://www.deezer.com/track/{track['id']}"
+            for res in results.values():
+                track = res["track"]
+                track_name = track['name']
+                clickable_artists = []
+                for artist_obj in track['artists']:
+                    a_name = artist_obj.get("name", "Unknown")
+                    if track.get("platform", "spotify") == "Deezer" and artist_obj.get("id"):
+                        clickable_artists.append(f"[{a_name}](https://www.deezer.com/artist/{artist_obj['id']})")
+                    elif artist_obj.get("id"):
+                        clickable_artists.append(f"[{a_name}](https://open.spotify.com/artist/{artist_obj['id']})")
                     else:
-                        song_url = f"https://open.spotify.com/track/{track['id']}"
-                if song_url:
-                    st.markdown(f'<a href="{song_url}" target="_blank"><img src="{album_cover}" width="250" style="border-radius: 10px;"></a>', unsafe_allow_html=True)
-            st.markdown("#### 📄 Playlists:")
-            for plist in res["playlists"]:
-                position = plist.get("position", "-")
-                extra_playlist = f"Followers: {plist.get('followers', 'N/A')} | Owner: {plist.get('owner', 'N/A')}"
-                if plist.get("description"):
-                    extra_playlist += f" | {plist.get('description')}"
-                playlist_html = f"""
-                    <div style="margin-bottom: 20px;">
-                        <a href="{plist['url']}" target="_blank" style="display: block; font-size: 16px; font-weight: bold; text-decoration: none; color: black; margin-bottom: 5px;">
-                            {plist['name']}
-                        </a>
-                        <div style="display: flex; align-items: center;">
-                            <a href="{plist['url']}" target="_blank">
-                                <div style="width: 80px; height: 80px; margin-right: 15px;">
-                                  <img src="{plist['cover']}" alt="cover" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
-                                </div>
+                        clickable_artists.append(a_name)
+                artists_md = ", ".join(clickable_artists)
+                album_release_date = track.get("release_date", "")
+                album_cover = track.get("cover_url") or (track.get("album", {}).get("images", [{}])[0].get("url") if track.get("album", {}).get("images") else None)
+                extra_info = ""
+                if album_release_date:
+                    extra_info += f"Released: {album_release_date}  \n"
+                if track.get("popularity") is not None:
+                    extra_info += f"Popularity: {track['popularity']}  \n"
+                if track.get("streams") is not None:
+                    extra_info += f"Streams: {format_number(track['streams'])}  \n"
+                st.markdown(f"### 📀 {track_name} – {artists_md}")
+                if extra_info:
+                    st.markdown(extra_info)
+                if album_cover:
+                    song_url = ""
+                    if track.get("id"):
+                        if track.get("platform", "spotify") == "Deezer":
+                            song_url = f"https://www.deezer.com/track/{track['id']}"
+                        else:
+                            song_url = f"https://open.spotify.com/track/{track['id']}"
+                    if song_url:
+                        st.markdown(f'<a href="{song_url}" target="_blank"><img src="{album_cover}" width="250" style="border-radius: 10px;"></a>', unsafe_allow_html=True)
+                st.markdown("#### 📄 Playlists:")
+                for plist in res["playlists"]:
+                    position = plist.get("position", "-")
+                    extra_playlist = f"Followers: {plist.get('followers', 'N/A')} | Owner: {plist.get('owner', 'N/A')}"
+                    if plist.get("description"):
+                        extra_playlist += f" | {plist.get('description')}"
+                    playlist_html = f"""
+                        <div style="margin-bottom: 20px;">
+                            <a href="{plist['url']}" target="_blank" style="display: block; font-size: 16px; font-weight: bold; text-decoration: none; color: black; margin-bottom: 5px;">
+                                {plist['name']}
                             </a>
-                            <div>
-                                <span style="font-size: 14px; color: white;">Track #: <strong>{position}</strong> ({plist['platform'].capitalize()})</span><br>
-                                <span style="font-size: 12px; color: white;">{extra_playlist}</span>
+                            <div style="display: flex; align-items: center;">
+                                <a href="{plist['url']}" target="_blank">
+                                    <div style="width: 80px; height: 80px; margin-right: 15px;">
+                                      <img src="{plist['cover']}" alt="cover" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+                                    </div>
+                                </a>
+                                <div>
+                                    <span style="font-size: 14px; color: white;">Track #: <strong>{position}</strong> ({plist['platform'].capitalize()})</span><br>
+                                    <span style="font-size: 12px; color: white;">{extra_playlist}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                """
-                st.markdown(playlist_html, unsafe_allow_html=True)
-    else:
-        st.warning(f"I'm sorry, {search_term} couldn't be found. 😔")
+                    """
+                    st.markdown(playlist_html, unsafe_allow_html=True)
+        else:
+            st.warning(f"I'm sorry, {search_term} couldn't be found. 😔")
 
 
