@@ -5,6 +5,7 @@ import asyncio
 import shutil
 import subprocess
 from playwright.async_api import async_playwright
+from pathlib import Path
 
 def ensure_playwright_installed():
     if not shutil.which("playwright"):
@@ -17,7 +18,8 @@ def ensure_playwright_installed():
 
 ensure_playwright_installed()
 
-PLAYLISTS_FILE = "data/playlists.json"
+# Use an absolute path relative to this file for the playlists file
+PLAYLISTS_FILE = Path(__file__).parent.parent / "data" / "playlists.json"
 
 def load_playlists():
     try:
@@ -30,6 +32,8 @@ def load_playlists():
 # Neue Funktion zum Speichern der Playlists
 def save_playlists(data):
     try:
+        # Ensure the directory exists
+        PLAYLISTS_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(PLAYLISTS_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
@@ -67,7 +71,6 @@ def get_deezer_playlist_data(playlist_id):
         "url": f"https://www.deezer.com/playlist/{playlist_id}"
     }
 
-from pathlib import Path
 
 def load_token():
     token_path = Path(".secrets") / ".token.txt"
